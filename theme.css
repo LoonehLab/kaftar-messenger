@@ -1,0 +1,59 @@
+:root, [data-theme="dark"] {
+    --bg-app: #0f1012;
+    --bg-sidebar: #17181c;
+    --bg-chat: #1b1c22;
+    --bg-input: #111216;
+    --text-main: #cbd5e1;
+    --text-white: #ffffff;
+    --border-main: #0f1012;
+    --border-light: rgba(255, 255, 255, 0.03);
+    
+    --cyan-aqua: #00f0ff;
+    --dark-blue: #5865f2;
+    --neon-glow: rgba(0, 240, 255, 0.35);
+    --icon-mute: #4f545c;
+    --icon-active: #64748b;
+
+    --msg-incoming: rgba(147, 51, 234, 0.12);
+    --msg-incoming-border: rgb(108, 38, 173);
+    --msg-incoming-shadow: rgba(90, 32, 145, 0.4);
+    
+    --msg-outgoing: rgba(255, 255, 255, 0.04);
+    --msg-outgoing-border: rgb(81, 81, 81);
+    --msg-outgoing-shadow: rgba(105, 105, 105, 0.3);
+
+    --chat-pattern-overlay: linear-gradient(rgba(27, 28, 34, 0.85), rgba(27, 28, 34, 0.95));
+    --chat-pattern-lines: rgba(0, 240, 255, 0.05);
+    --chat-pattern-base: linear-gradient(135deg, rgba(88, 150, 255, 0.15) 0%, rgba(88, 101, 242, 0.02) 100%);
+    --footer-shadow: rgba(15, 16, 18, 0.9);
+}
+
+[data-theme="light"] {
+    --bg-app: #e2e8f0;
+    --bg-sidebar: #f1f5f9;
+    --bg-chat: #ffffff;
+    --bg-input: #f8fafc;
+    --text-main: #334155;
+    --text-white: #0f172a;
+    --border-main: #cbd5e1;
+    --border-light: rgba(15, 23, 42, 0.04);
+
+    --cyan-aqua: #00b4d8;
+    --dark-blue: #4361ee;
+    --neon-glow: rgba(0, 180, 216, 0.2);
+    --icon-mute: #94a3b8;
+    --icon-active: #64748b;
+
+    --msg-incoming: rgba(147, 51, 234, 0.08);
+    --msg-incoming-border: rgba(147, 51, 234, 0.3);
+    --msg-incoming-shadow: rgba(147, 51, 234, 0.05);
+    
+    --msg-outgoing: rgba(15, 23, 42, 0.03);
+    --msg-outgoing-border: rgba(15, 23, 42, 0.1);
+    --msg-outgoing-shadow: rgba(0, 0, 0, 0.02);
+
+    --chat-pattern-overlay: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.95));
+    --chat-pattern-lines: rgba(0, 180, 216, 0.04);
+    --chat-pattern-base: linear-gradient(135deg, rgba(67, 97, 238, 0.08) 0%, rgba(0, 180, 216, 0.02) 100%);
+    --footer-shadow: rgba(0, 0, 0, 0.06);
+}
