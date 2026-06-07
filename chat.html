@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fa" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaftar Messenger</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="user-avatar main-avatar"></div>
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" placeholder="search bar">
+                </div>
+            </div>
+
+            <div class="chatroom-list">
+                <div class="chatroom-item active">
+                    <div class="room-info">
+                        <div class="room-avatar"></div>
+                        <span class="room-name">Name</span>
+                    </div>
+                    <i class="fas fa-ellipsis-v options-icon"></i>
+                </div>
+                
+                <div class="chatroom-item">
+                    <div class="room-info">
+                        <div class="room-avatar"></div>
+                        <span class="room-name">General Chat</span>
+                    </div>
+                    <i class="fas fa-ellipsis-v options-icon"></i>
+                </div>
+
+                <div class="chatroom-item">
+                    <div class="room-info">
+                        <div class="room-avatar"></div>
+                        <span class="room-name">Gaming Room</span>
+                    </div>
+                    <i class="fas fa-ellipsis-v options-icon"></i>
+                </div>
+            </div>
+        </aside>
+
+        <main class="chat-area">
+            <header class="chat-header">
+                <div class="current-room-details">
+                    <button class="back-btn">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    
+                    <div class="room-avatar header-avatar">photo</div>
+                    <div class="room-status">
+                        <h3 class="current-room-name">Name</h3>
+                        <span class="last-online">Last online</span>
+                    </div>
+                </div>
+                <div class="header-settings">
+                    <i class="fas fa-cog gear-icon" title="setting gear icon"></i>
+                </div>
+            </header>
+
+            <div class="messages-container">
+                <div class="message incoming">
+                    <div class="message-bubble">
+                        لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ.
+                    </div>
+                </div>
+
+                <div class="message outgoing">
+                    <div class="message-bubble">
+                        لورم ایپسوم متن ساختگی با تولید سادگی نامفهوم از صنعت چاپ و با استفاده از طراحان گرافیک است.
+                    </div>
+                </div>
+
+                <div class="message incoming">
+                    <div class="message-bubble">
+                        پاسخ تست برای هماهنگی قالب چت چت‌روم.
+                    </div>
+                </div>
+            </div>
+
+            <footer class="chat-footer">
+                <div class="input-container">
+                    <button class="action-btn plus-btn"><i class="fas fa-plus"></i></button>
+                    <input type="text" placeholder="Type a message...">
+                    
+                    <button class="outer-send-btn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </footer>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
