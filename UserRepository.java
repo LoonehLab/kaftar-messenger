@@ -78,7 +78,7 @@ public class UserRepository
       return false;
    }
 
-   public User findUserById(User user)
+   public User findUser(User user)
    {
       List<User> users = makeArrayOfAllUsers();
 
