@@ -34,9 +34,28 @@ public class Group extends Chat
 
     public void send(Message text)
     {
+        text.setChat((Group)this);
         messages.add(text);
         numOfMessages++;
-        text.setId(numOfMessages);
+        text.setId(messages.size());
+
+        for(User u : members)
+        {
+            if(u.getId() == text.getSenderId())
+            {
+                u.addSentMessage(text);
+
+                for(User v : members)
+                {
+                    if(v != u)
+                    {
+                        v.addReceivedMessage(text);
+                    }
+                }
+
+                return;
+            }
+        }
     }
 
     public void edit(String newText , Message mes)
@@ -63,7 +82,7 @@ public class Group extends Chat
     public void leftOrRemove(User user)
     {
         members.remove(user);
-        user.addGroup(this);
+        user.removeGroup(this);
     }
 
     public void deleteGroupForAll()
@@ -74,12 +93,21 @@ public class Group extends Chat
         {
             leftOrRemove(u);
         }
+
     }
 
     public void addMember(User user)
     {
         members.add(user);
     }
+
+
+    public int getNumOfMessages(){ return numOfMessages; }
+    public String getId(){ return id; }
+    public String getName(){ return name; }
+    public List<User> getMembers() { return members; }
+    public List<Message> getMessages() { return messages; }
+    public User getOwner(){ return owner; }
 
     public void setName(String name) { this.name= name; }
 }

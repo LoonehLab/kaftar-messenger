@@ -17,7 +17,7 @@ public class UserRepository
       }
     }
 
-    catch(IOException e)  //برای ارور های ممکن
+    catch(IOException e) 
     {
       e.printStackTrace();
     }
@@ -31,7 +31,7 @@ public class UserRepository
          writer.write(user.getId()+" , "+user.getUserName()+" , "+user.getPassword()+"\n");
       }
 
-      catch(IOException e)  //برای ارور های ممکن
+      catch(IOException e)  
       {
          e.printStackTrace();
       }
@@ -55,7 +55,7 @@ public class UserRepository
          }
       }
 
-      catch(IOException e)  //برای ارور های ممکن
+      catch(IOException e)  
       {
          e.printStackTrace();
       }

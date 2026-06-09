@@ -41,6 +41,11 @@ public class User
         groups.add(g);
     }
 
+    public void removeGroup(Group g)
+    {
+        groups.remove(g);
+    }
+
     public void addPv(PV p)
     {
         pv.add(p);
@@ -49,6 +54,16 @@ public class User
     public void groupCreated()
     {
         howManyGroupsCreate++;
+    }
+
+    public void addSentMessage(Message mess)
+    {
+        sentMessages.add(mess);
+    }
+
+    public void addReceivedMessage(Message mess)
+    {
+        receivedMessages.add(mess);
     }
 
     public String getUserName(){ return userName;}

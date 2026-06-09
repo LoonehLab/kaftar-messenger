@@ -9,6 +9,8 @@ public class Message
     private int numOfEdits;
     private boolean deleted;
 
+    private Chat chat;
+
     Message(int id , String senderId , String receiverId , String text , long time , boolean edited , int numOfEdits , boolean deleted)
     {
         this.id = id;
@@ -19,6 +21,7 @@ public class Message
         this.edited = edited;
         this.numOfEdits = numOfEdits;
         this.deleted = deleted;
+        chat = null;
     }
 
     public int getId(){ return id;}
@@ -39,4 +42,5 @@ public class Message
 
     public void setDeleted(boolean isDeleted){ deleted = isDeleted;}
     public void setId(int id){ this.id = id;}
+    public void setChat(Chat chat){ this.chat = chat;}
 }

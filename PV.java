@@ -3,7 +3,7 @@ import java.util.*;
 public class PV extends Chat 
 {
     private User firstPerson;
-    private User secondPerson;
+    protected User secondPerson;
     private int numOfMessages;
 
     boolean isDeleted;
@@ -26,9 +26,27 @@ public class PV extends Chat
 
     public void send(Message text)
     {
+        if(isDeleted)
+        {
+            isDeleted = false;
+        }
+        
+        text.setChat((PV)this);
         messages.add(text);
         numOfMessages++;
-        text.setId(numOfMessages);
+        text.setId(messages.size());
+
+        if(text.getSenderId() == firstPerson.getId())
+        {
+            firstPerson.addSentMessage(text);
+            secondPerson.addReceivedMessage(text);
+        }
+
+        else if(text.getSenderId() == secondPerson.getId())
+        {
+            firstPerson.addReceivedMessage(text);
+            secondPerson.addSentMessage(text);
+        }
     }
 
     public void edit(String newText , Message mes)

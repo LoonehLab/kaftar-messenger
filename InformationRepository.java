@@ -37,7 +37,7 @@ public class InformationRepository
                         );
         }
 
-        catch(IOException e)  //برای ارور های ممکن
+        catch(IOException e) 
         {
            e.printStackTrace();
         }
