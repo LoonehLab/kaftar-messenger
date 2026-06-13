@@ -1,50 +1,162 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const chatroomItems = document.querySelectorAll('.chatroom-item');
+    const chatroomListContainer = document.querySelector('.chatroom-list');
     const currentRoomName = document.querySelector('.current-room-name');
     const sendBtn = document.querySelector('.outer-send-btn');
     const messageInput = document.querySelector('.input-container input');
     const messagesContainer = document.querySelector('.messages-container');
-
-    // Mobile Chatroom Switch
     const appContainer = document.querySelector('.app-container');
-    chatroomItems.forEach(item => {
-        item.addEventListener('click', () => {
-            chatroomItems.forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-            const selectedRoomName = item.querySelector('.room-name').textContent;
-            currentRoomName.textContent = selectedRoomName;
-            appContainer.classList.add('chat-open');
-        });
-    });
 
-    // Mobile Back Button
+    const API_BASE_URL = 'http://localhost:8081/api';
+    
+    // Getting user ID (Temperory)
+    let CURRENT_USER_ID = prompt("Enter User ID:") || "123";
+    
+    let activeChat = {
+        type: null,     // 'pv' یا 'group'
+        targetId: null  // آیدی مخاطب یا آیدی گروه
+    };
+    
+    let updateIntervalId = null;
+
+    // =============( Mobile Back Button )=============
     const backBtn = document.querySelector('.back-btn');
     if (backBtn) {
         backBtn.addEventListener('click', () => {
-            appContainer.classList.remove('chat-open');
+            appContainer.classList.remove('chat-open'); // بستن باکس چت و برگشت به لیست چت‌ها در موبایل
         });
     }
 
-    // Message Send Functionality
-    function sendMessage() {
-        const text = messageInput.value.trim();
-        if (text !== '') {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', 'outgoing');
-            messageDiv.innerHTML = `
-                <div class="message-bubble">
-                    ${text}
-                </div>
-            `;
-            messagesContainer.appendChild(messageDiv);
-            messageInput.value = '';
+    // =============( User Data and Chats )=============
+    async function initUserApp() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/user/init?userId=${CURRENT_USER_ID}`);
+            const userData = await res.json();
+            console.log("User data loaded:", userData);
+            chatroomListContainer.innerHTML = ''; //Cleaning chatrooms
+            userData.pvs.forEach(pv => {
+                createChatroomItemHTML(pv.targetId, pv.targetName, 'pv'); //Rendering PV's
+            });
+            userData.groups.forEach(group => {
+                createChatroomItemHTML(group.groupId, group.groupName, 'group'); //Rendering groups
+            });
+            const firstChat = chatroomListContainer.querySelector('.chatroom-item'); //Rendering first
+            if (firstChat) {
+                firstChat.classList.add('active');
+                currentRoomName.textContent = firstChat.querySelector('.room-name').textContent;
+                activeChat.type = firstChat.getAttribute('data-type');
+                activeChat.targetId = firstChat.getAttribute('data-target-id');
+                loadMessages();
+                setupAutoUpdate();
+            } else {
+                messagesContainer.innerHTML = '<div style="text-align:center; padding:20px; color:gray;">لیست چت‌های شما خالی است.</div>';
+            }
+
+        } catch (err) {
+            console.error("Initialization error:", err);
+        }
+    }
+
+    // =============( Create Chatroom )=============
+    function createChatroomItemHTML(id, name, type) {
+        const itemDiv = document.createElement('div');
+        itemDiv.classList.add('chatroom-item');
+        itemDiv.setAttribute('data-type', type);
+        itemDiv.setAttribute('data-target-id', id);
+        itemDiv.innerHTML = `
+            <div class="room-info">
+                <div class="room-avatar"></div>
+                <span class="room-name">${name}</span>
+            </div>
+            <i class="fas fa-ellipsis-v options-icon"></i>
+        `;
+        itemDiv.addEventListener('click', () => { //Mobile Things
+            document.querySelectorAll('.chatroom-item').forEach(i => i.classList.remove('active'));
+            itemDiv.classList.add('active');
+            currentRoomName.textContent = name;
+            appContainer.classList.add('chat-open');
+            activeChat.type = type;
+            activeChat.targetId = id;
+            loadMessages();
+            setupAutoUpdate();
+        });
+        chatroomListContainer.appendChild(itemDiv);
+    }
+
+    // =============( Load Messages )=============
+    async function loadMessages() {
+        if (!activeChat.targetId) return;
+        let url = '';
+        if (activeChat.type === 'pv') {
+            url = `${API_BASE_URL}/pv?user1=${CURRENT_USER_ID}&user2=${activeChat.targetId}`;
+        } else if (activeChat.type === 'group') {
+            url = `${API_BASE_URL}/group?groupId=${activeChat.targetId}`;
+        }
+        try {
+            const response = await fetch(url);
+            if (!response.ok) return;
+            const messages = await response.json();
+            messagesContainer.innerHTML = '';
+            if (messages.length === 0) {
+                messagesContainer.innerHTML = '<div style="text-align:center; padding:20px; color:gray;">هیچ پیامی در این چت وجود ندارد.</div>';
+                return;
+            }
+            messages.forEach(msg => {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message');
+                if (msg.senderId === CURRENT_USER_ID) {
+                    messageDiv.classList.add('outgoing');
+                } else {
+                    messageDiv.classList.add('incoming');
+                }
+                messageDiv.innerHTML = `<div class="message-bubble">${msg.text}</div>`;
+                messagesContainer.appendChild(messageDiv);
+            });
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        } catch (error) {
+            console.error('Error loading messages:', error);
+        }
+    }
+
+    // =============( Send Message )=============
+    async function sendMessage() {
+        const text = messageInput.value.trim();
+        if (text === '' || !activeChat.targetId) return;
+        let url = `${API_BASE_URL}/${activeChat.type}`;
+        let bodyData = activeChat.type === 'pv' ? {
+            senderId: CURRENT_USER_ID,
+            receiverId: activeChat.targetId,
+            text: text
+        } : {
+            action: "send",
+            groupId: activeChat.targetId,
+            senderId: CURRENT_USER_ID,
+            text: text
+        };
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bodyData)
+            });
+            if (response.ok) {
+                messageInput.value = '';
+                await loadMessages();
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
         }
     }
     sendBtn.addEventListener('click', sendMessage);
     messageInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            sendMessage();
-        }
+        if (e.key === 'Enter') sendMessage();
     });
+
+    // Update Messages (Temp)
+    function setupAutoUpdate() {
+        if (updateIntervalId) clearInterval(updateIntervalId);
+        updateIntervalId = setInterval(loadMessages, 2000);
+    }
+
+    // =============( Initialize App )=============
+    initUserApp();
 });
