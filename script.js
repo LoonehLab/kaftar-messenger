@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const chatroomListContainer = document.querySelector('.chatroom-list');
     const currentRoomName = document.querySelector('.current-room-name');
+    const currentRoomAvatar = document.querySelector('.header-avatar');
     const sendBtn = document.querySelector('.outer-send-btn');
     const messageInput = document.querySelector('.input-container input');
     const messagesContainer = document.querySelector('.messages-container');
@@ -26,6 +27,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // =============( Profile Avatar )=============
+    function getAvatarHTML(id, name) {
+        const firstLetter = name ? name.trim().charAt(0).toUpperCase() : '?';
+        const avatarUrl = `assets/avatars/${id}.png`;
+        return `
+            <img src="${avatarUrl}" alt="${name}" onerror="this.style.display='none';">
+            <span>${firstLetter}</span>
+        `;
+    }
+
     // =============( User Data and Chats )=============
     async function initUserApp() {
         try {
@@ -45,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentRoomName.textContent = firstChat.querySelector('.room-name').textContent;
                 activeChat.type = firstChat.getAttribute('data-type');
                 activeChat.targetId = firstChat.getAttribute('data-target-id');
+                currentRoomAvatar.innerHTML = getAvatarHTML(activeChat.targetId, currentRoomName.textContent);
                 loadMessages();
                 setupAutoUpdate();
             } else {
@@ -71,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
         itemDiv.setAttribute('data-target-id', id);
         itemDiv.innerHTML = `
             <div class="room-info">
-                <div class="room-avatar"></div>
+                <div class="room-avatar">${getAvatarHTML(id, name)}</div>
                 <span class="room-name">${name}</span>
             </div>
             <i class="fas fa-ellipsis-v options-icon"></i>
@@ -80,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.chatroom-item').forEach(i => i.classList.remove('active'));
             itemDiv.classList.add('active');
             currentRoomName.textContent = name;
+            currentRoomAvatar.innerHTML = getAvatarHTML(id, name);
             appContainer.classList.add('chat-open');
             activeChat.type = type;
             activeChat.targetId = id;
