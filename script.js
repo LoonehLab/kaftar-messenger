@@ -48,7 +48,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadMessages();
                 setupAutoUpdate();
             } else {
-                messagesContainer.innerHTML = '<div style="text-align:center; padding:20px; color:gray;">لیست چت‌های شما خالی است.</div>';
+                messagesContainer.innerHTML = `
+                    <div class="chat-empty-state">
+                        <div class="empty-state-bubble">
+                            <i class="fas fa-comments"></i>
+                            <h4>There Are No Chats</h4>
+                        </div>
+                    </div>
+                `;
             }
 
         } catch (err) {
@@ -97,7 +104,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const messages = await response.json();
             messagesContainer.innerHTML = '';
             if (messages.length === 0) {
-                messagesContainer.innerHTML = '<div style="text-align:center; padding:20px; color:gray;">هیچ پیامی در این چت وجود ندارد.</div>';
+                messagesContainer.innerHTML = `
+                    <div class="chat-empty-state">
+                        <div class="empty-state-bubble">
+                            <i class="fas fa-comments"></i>
+                            <h4>No Messages Yet</h4>
+                        </div>
+                    </div>
+                `;
                 return;
             }
             messages.forEach(msg => {

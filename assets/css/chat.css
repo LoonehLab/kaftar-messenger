@@ -225,6 +225,42 @@ body {
         var(--chat-pattern-base);
 }
 
+.chat-empty-state {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 40px;
+    z-index: 3;
+}
+
+.empty-state-bubble {
+    max-width: 300px;
+    padding: 20px;
+    background-color: var(--msg-outgoing);
+    border: 1px solid var(--msg-outgoing-border);
+    box-shadow: 0 0 15px var(--msg-outgoing-shadow);
+    border-radius: 16px;
+    text-align: center;
+    backdrop-filter: blur(4px);
+}
+
+.empty-state-bubble i {
+    font-size: 24px;
+    color: var(--dark-blue);
+    margin-bottom: 15px;
+}
+
+.empty-state-bubble h4 {
+    color: var(--text-white);
+    font-size: 15px;
+    margin-bottom: 6px;
+}
+
 .message {
     display: flex;
     width: 100%;
