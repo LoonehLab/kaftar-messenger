@@ -19,13 +19,24 @@ public class PV extends Chat
 
         messages = new ArrayList<>();
 
-        firstPerson.addPv(this);
-        secondPerson.addPv(this);
     }
 
 
     public void send(Message text)
     {
+        if(numOfMessages == 0)
+        {
+            if(!firstPerson.getPv().contains(this))
+            {
+                firstPerson.addPv(this);
+            }
+
+            if(!secondPerson.getPv().contains(this))
+            {
+                secondPerson.addPv(this);
+            }
+        }
+
         if(isDeleted)
         {
             isDeleted = false;

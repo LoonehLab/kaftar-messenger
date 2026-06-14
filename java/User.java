@@ -7,12 +7,11 @@ public class User
     private String password;
     private String bio;
     private String phoneNumber;
-    private Security security;////////////
+    //private Security security;
     
     private List<PV> pv;/////////////
     private List<Group> groups;///////////////
-    //private List<Contact>;
-    //profile
+    private List<User> contacts;
 
     private List<Message> sentMessages;
     private List<Message> receivedMessages;
@@ -24,6 +23,7 @@ public class User
     {
         this.id = id;
         this.userName = userName;
+        //password bayad hash beshe
         this.password = password;
         bio = "";
         phoneNumber = "";
@@ -32,6 +32,7 @@ public class User
         groups = new ArrayList<>();
         sentMessages = new ArrayList<>();
         receivedMessages = new ArrayList<>();
+        contacts = new ArrayList<>();
 
         howManyGroupsCreate = 0;
     }
@@ -49,6 +50,31 @@ public class User
     public void addPv(PV p)
     {
         pv.add(p);
+    }
+
+    public boolean addContact (User contact)
+    {
+        for(User c : contacts)
+        {
+            if((contact.getId()).equals(c.getId()))
+            {
+                return false;
+            }
+        }
+
+        if(contact.getId().equals(id))
+        {
+            return false;
+        }
+
+        else
+        {
+            contacts.add(contact);
+            PV newPv = new PV(this, contact);
+            this.addPv(newPv);
+
+            return true;
+        }
     }
 
     public void groupCreated()
