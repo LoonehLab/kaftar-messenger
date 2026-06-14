@@ -2,13 +2,13 @@ import java.util.*;
 
 public class PV extends Chat 
 {
-    private User firstPerson;
+    protected User firstPerson;
     protected User secondPerson;
-    private int numOfMessages;
+    protected int numOfMessages;
 
-    boolean isDeleted;
+    private boolean isDeleted;
 
-    private List<Message> messages;
+    protected List<Message> messages;
 
     PV(User first , User second)
     {

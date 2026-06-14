@@ -9,9 +9,12 @@ public class User
     private String phoneNumber;
     //private Security security;
     
-    private List<PV> pv;/////////////
-    private List<Group> groups;///////////////
+    private List<PV> pv;
+    private List<Group> groups;
     private List<User> contacts;
+
+    private SavedMessage savedMessage;
+    private List<Message> messageOfSavedMessage;
 
     private List<Message> sentMessages;
     private List<Message> receivedMessages;
@@ -33,6 +36,9 @@ public class User
         sentMessages = new ArrayList<>();
         receivedMessages = new ArrayList<>();
         contacts = new ArrayList<>();
+
+        savedMessage = new SavedMessage(this, this);
+        messageOfSavedMessage = new ArrayList<>();
 
         howManyGroupsCreate = 0;
     }
@@ -90,6 +96,11 @@ public class User
     public void addReceivedMessage(Message mess)
     {
         receivedMessages.add(mess);
+    }
+
+    public void addMessageInSavedMessage(Message text)
+    {
+        messageOfSavedMessage.add(text);
     }
 
     public String getUserName(){ return userName;}
