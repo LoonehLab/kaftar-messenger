@@ -26,8 +26,7 @@ public class User
     {
         this.id = id;
         this.userName = userName;
-        //password bayad hash beshe
-        this.password = password;
+        this.password = PasswordHasher.hashPassword(password, PasswordHasher.getSalt());
         bio = "";
         phoneNumber = "";
 
@@ -81,6 +80,45 @@ public class User
 
             return true;
         }
+    }
+
+    public boolean removeContact(User contact)
+    {
+        if(contact.getId().equals(id))
+        {
+            return false;
+        } 
+
+        for(User c : contacts)
+        {
+            if((contact.getId()).equals(c.getId()))
+            {
+                contacts.remove(contact);
+
+                for(PV p : pv)
+                {
+                    if(p.getFirstPerson() == this && p.getSecondPerson() == contact)
+                    {
+                        if(p.getNumOfMessages() == 0)
+                        {
+                            this.pv.remove(p);
+                        }
+                    }
+
+                    else if(p.getFirstPerson() == this && p.getSecondPerson() == contact)
+                    {
+                        if(p.getNumOfMessages() == 0)
+                        {
+                            this.pv.remove(p);
+                        }
+                    }
+                        
+                }
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void groupCreated()
