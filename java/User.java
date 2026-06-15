@@ -79,24 +79,6 @@ public class User
         else
         {
             contacts.add(contact);
-
-            for(int i=0 ; i<pv.size() ; i++)
-            {
-                if(pv.get(i).getFirstPerson() == this && pv.get(i).getSecondPerson() == contact)
-                {
-                    return true;
-                }
-
-                else if(pv.get(i).getFirstPerson() == contact && pv.get(i).getSecondPerson() == this)
-                {
-                    return true;
-                }
-            }
-
-
-            PV newPv = new PV(this, contact);
-            this.addPv(newPv);
-
             return true;
         }
     }
@@ -113,27 +95,6 @@ public class User
             if((contact.getId()).equals(c.getId()))
             {
                 contacts.remove(contact);
-
-                for(PV p : pv)
-                {
-                    if(p.getFirstPerson() == this && p.getSecondPerson() == contact)
-                    {
-                        if(p.getNumOfMessages() == 0)
-                        {
-                            this.pv.remove(p);
-                        }
-                    }
-
-                    else if(p.getFirstPerson() == this && p.getSecondPerson() == contact)
-                    {
-                        if(p.getNumOfMessages() == 0)
-                        {
-                            this.pv.remove(p);
-                        }
-                    }
-                        
-                }
-                return true;
             }
         }
 

@@ -26,15 +26,8 @@ public class PV extends Chat
     {
         if(numOfMessages == 0)
         {
-            if(!firstPerson.getPv().contains(this))
-            {
-                firstPerson.addPv(this);
-            }
-
-            if(!secondPerson.getPv().contains(this))
-            {
-                secondPerson.addPv(this);
-            }
+            firstPerson.addPv(this);
+            secondPerson.addPv(this);
         }
 
         if(isDeleted)
