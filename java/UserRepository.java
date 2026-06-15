@@ -5,7 +5,7 @@ public class UserRepository
 {
    private String filePath = "users.txt";
    
-   UserRepository()
+   private UserRepository()
    {
     try
     {
@@ -23,6 +23,13 @@ public class UserRepository
     }
     
    }
+
+   private static class UserRepositoryInner
+   {
+      private static final UserRepository INSTANCE = new UserRepository();
+   }
+
+   public static UserRepository getInstance(){ return UserRepositoryInner.INSTANCE; }
 
    public void save(User user)
    {
