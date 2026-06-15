@@ -21,6 +21,8 @@ public class User
 
     private int howManyGroupsCreate;
 
+    private InformationRepository informationRepository;
+
 
     User(String id , String userName , String password)
     {
@@ -40,6 +42,8 @@ public class User
         messageOfSavedMessage = new ArrayList<>();
 
         howManyGroupsCreate = 0;
+
+        informationRepository = new InformationRepository(this);
     }
 
     public void addGroup(Group g)
@@ -89,7 +93,7 @@ public class User
                 }
             }
 
-            
+
             PV newPv = new PV(this, contact);
             this.addPv(newPv);
 

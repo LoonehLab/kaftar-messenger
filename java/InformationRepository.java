@@ -159,4 +159,41 @@ public class InformationRepository
            e.printStackTrace();
         }
     }
+
+    public void savePv(PV pv)
+    {
+        try(FileWriter writer = new FileWriter(pvPath , true))
+        {
+            if(pv.getFirstPerson() == user)
+            {
+                writer.write(" , "+pv.getSecondPerson().getId());
+            }
+
+            else if(pv.getSecondPerson() == user)
+            {
+                writer.write(" , "+pv.getFirstPerson().getId());
+            }
+        }
+
+        catch(IOException e) 
+        {
+           e.printStackTrace();
+        }
+    }
+
+    public void saveGroup(Group group)
+    {
+        try(FileWriter writer = new FileWriter(pvPath , true))
+        {
+            writer.write(" , "+group.getId());
+        }
+
+        catch(IOException e) 
+        {
+           e.printStackTrace();
+        }
+    }
+
+
+    //bayad method benevisi ke etelaat ro list kone va bede , baraye remove etelaat bayad benevisi 
 }
