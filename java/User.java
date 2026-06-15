@@ -75,6 +75,21 @@ public class User
         else
         {
             contacts.add(contact);
+
+            for(int i=0 ; i<pv.size() ; i++)
+            {
+                if(pv.get(i).getFirstPerson() == this && pv.get(i).getSecondPerson() == contact)
+                {
+                    return true;
+                }
+
+                else if(pv.get(i).getFirstPerson() == contact && pv.get(i).getSecondPerson() == this)
+                {
+                    return true;
+                }
+            }
+
+            
             PV newPv = new PV(this, contact);
             this.addPv(newPv);
 
@@ -148,6 +163,7 @@ public class User
     public String getPhoneNumber(){ return phoneNumber;}
     public List<PV> getPv(){ return pv; }
     public List<Group> getGroups(){ return groups; }
+    public List<User> getContacts(){ return contacts; }
     public int getHowManyGroupCreated() { return howManyGroupsCreate; }
 
     public void setUserName(String userName){ this.userName = userName; }
