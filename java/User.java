@@ -24,7 +24,7 @@ public class User
     private InformationRepository informationRepository;
 
 
-    User(String id , String userName , String password)
+    User(String id , String userName , String password, boolean loadMode)
     {
         this.id = id;
         this.userName = userName;
@@ -42,8 +42,8 @@ public class User
         messageOfSavedMessage = new ArrayList<>();
 
         howManyGroupsCreate = 0;
-
-        informationRepository = new InformationRepository(this);
+        
+        if(!loadMode) informationRepository = new InformationRepository(this);
     }
 
     public void addGroup(Group g)
@@ -130,6 +130,12 @@ public class User
     public List<Group> getGroups(){ return groups; }
     public List<User> getContacts(){ return contacts; }
     public int getHowManyGroupCreated() { return howManyGroupsCreate; }
+    public InformationRepository getInformationRepository()
+    {
+        if(informationRepository == null)
+            informationRepository = new InformationRepository(this);
+        return informationRepository;
+    }
 
     public void setUserName(String userName){ this.userName = userName; }
     public void setId(String id){ this.id = id; }

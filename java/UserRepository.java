@@ -56,7 +56,7 @@ public class UserRepository
          {
             String[] userData = line.split(" , ");
             
-            User newUser = new User(userData[0], userData[1], userData[2]);
+            User newUser = new User(userData[0], userData[1], userData[2], true);
 
             users.add(newUser);
          }
@@ -98,5 +98,10 @@ public class UserRepository
       }
 
       return null;
+   }
+
+   public List<User> getAllUsers()
+   {
+      return makeArrayOfAllUsers();
    }
 }
