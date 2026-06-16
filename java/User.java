@@ -28,7 +28,7 @@ public class User
     {
         this.id = id;
         this.userName = userName;
-        this.password = PasswordHasher.hashPassword(password, PasswordHasher.getSalt());
+        this.password = password;
         bio = "";
         phoneNumber = "";
 

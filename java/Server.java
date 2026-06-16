@@ -22,6 +22,7 @@ public class Server {
                 String id = extractJsonValue(body, "id"); //Temp
                 String user = extractJsonValue(body, "user");
                 String pass = extractJsonValue(body, "pass");
+                pass = PasswordHasher.hashPassword(pass);
                 if (id.isEmpty() || user.isEmpty() || pass.isEmpty()) {
                     sendResponse(exchange, 400, "{\"error\":\"Missing fields\"}");
                     return;
