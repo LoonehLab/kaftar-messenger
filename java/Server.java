@@ -5,7 +5,7 @@ import java.net.InetSocketAddress;
 import java.util.*;
 
 public class Server {
-    private static final UserRepository userRepo = new UserRepository();
+    private static final UserRepository userRepo = UserRepository.getInstance();
     // Chats: (TEMP)
     private static final List<PV> activePVs = new ArrayList<>();
     private static final List<Group> activeGroups = new ArrayList<>();
@@ -261,7 +261,10 @@ public class Server {
                     PV pv = findOrCreatePV(user1, user2);
                     targetChat = pv;
                     for (Message m : pv.messages())
-                        if (m.getId() == messageId) targetMsg = m; break;
+                        if (m.getId() == messageId) {
+                            targetMsg = m;
+                            break;
+                        }
                 }
             }
             else if ("group".equalsIgnoreCase(chatType)) {
@@ -270,7 +273,10 @@ public class Server {
                 targetChat = g;
                 if (g != null) {
                     for (Message m : g.getMessages())
-                        if (m.getId() == messageId) targetMsg = m; break;
+                        if (m.getId() == messageId) {
+                            targetMsg = m;
+                            break;
+                        }
                 }
             }
             if (targetMsg == null || targetChat == null) {
