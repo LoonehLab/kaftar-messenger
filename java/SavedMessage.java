@@ -6,7 +6,7 @@ public class SavedMessage extends PV
    } 
 
    @Override
-   public void deletePv()
+   public void deletePv(String forWho)
    {
     return;
    }

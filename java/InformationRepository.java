@@ -8,7 +8,8 @@ import java.util.List;
 
 public class InformationRepository 
 {
-    private String dataOfUserPath;
+    private String userDirectory;
+    //private String dataOfUserPath;
     private String pvPath;
     private String groupsPath;
     private String allGroupsPath;
@@ -19,7 +20,8 @@ public class InformationRepository
 
     public InformationRepository(User user)
     {
-        dataOfUserPath = user.getId()+".txt";
+        userDirectory = user.getId();
+        //dataOfUserPath = user.getId()+".txt";
         pvPath = user.getId()+"pv.txt";
         groupsPath = user.getId()+"group.txt";
         bioPath = user.getId()+"bio.txt";
@@ -29,37 +31,37 @@ public class InformationRepository
 
         try
         {
-            File dataFile = new File(dataOfUserPath);
-            if(!dataFile.exists())
+            File folder = new File(userDirectory);
+            if(!folder.exists())
             {
-               dataFile.createNewFile();
+               folder.mkdir();
             }
 
-            File pvFile = new File(pvPath);
+            File pvFile = new File(folder , pvPath);
             if(!pvFile.exists())
             {
                pvFile.createNewFile();
             }
 
-            File groupFile = new File(groupsPath);
+            File groupFile = new File(folder , groupsPath);
             if(!groupFile.exists())
             {
                groupFile.createNewFile();
             }
 
-            File bioFile = new File(bioPath);
-            if(!bioFile.exists())
+            File bioAndOtherDataFile = new File(folder , bioPath);
+            if(!bioAndOtherDataFile.exists())
             {
-               bioFile.createNewFile();
+               bioAndOtherDataFile.createNewFile();
             }
 
-            File contactFile = new File(contactsPath);
+            File contactFile = new File(folder , contactsPath);
             if(!contactFile.exists())
             {
                contactFile.createNewFile();
             }
 
-            File allGroupsFile = new File(allGroupsPath);
+            File allGroupsFile = new File(folder , allGroupsPath);
             if(!allGroupsFile.exists())
             {
                 allGroupsFile.createNewFile();
@@ -70,106 +72,6 @@ public class InformationRepository
         {
             e.printStackTrace();
         }
-
-
-        try(FileWriter writer = new FileWriter(dataOfUserPath , true))
-        {
-           writer.write(user.getId()+" , "+user.getUserName()+" , "+user.getPassword());
-        }
-
-        catch(IOException e) 
-        {
-           e.printStackTrace();
-        }
-
-        try(FileWriter writer = new FileWriter(pvPath , true))
-        {
-            for(int i=0 ; i<user.getPv().size() ; i++)
-            {
-                if(i == user.getPv().size()-1)
-                {
-                    if(((user.getPv()).get(i)).getFirstPerson() == user)
-                    {
-                        writer.write(((user.getPv()).get(i)).getSecondPerson().getId());
-                    }
-
-                    else
-                    {
-                        writer.write(((user.getPv()).get(i)).getFirstPerson().getId());
-                    }   
-                }
-
-                else
-                {
-                    if(((user.getPv()).get(i)).getFirstPerson() == user)
-                    {
-                        writer.write(((user.getPv()).get(i)).getSecondPerson().getId()+" , ");
-                    }
-
-                    else
-                    {
-                        writer.write(((user.getPv()).get(i)).getFirstPerson().getId()+" , ");
-                    }
-                }
-            }
-        }
-
-        catch(IOException e) 
-        {
-           e.printStackTrace();
-        }
-
-        try(FileWriter writer = new FileWriter(groupsPath , true))
-        {
-           for(int i=0 ; i<user.getGroups().size() ; i++)
-           {
-            if(i == user.getGroups().size()-1)
-            {
-                writer.write(user.getGroups().get(i).getId());
-            }
-
-            else
-            {
-               writer.write(user.getGroups().get(i).getId()+" , "); 
-            }
-           }
-        }
-
-        catch(IOException e) 
-        {
-           e.printStackTrace();
-        }
-
-        try(FileWriter writer = new FileWriter(bioPath , true))
-        {
-           writer.write(user.getBio());
-        }
-
-        catch(IOException e) 
-        {
-           e.printStackTrace();
-        }
-
-        try(FileWriter writer = new FileWriter(contactsPath , true))
-        {
-           for(int i=0 ; i<user.getContacts().size() ; i++)
-           {
-            if(i == user.getContacts().size()-1)
-            {
-                writer.write(user.getContacts().get(i).getId());
-            }
-
-            else
-            {
-                writer.write(user.getContacts().get(i).getId()+" , ");
-            }
-           }
-        }
-
-        catch(IOException e) 
-        {
-           e.printStackTrace();
-        }
     }
 
     public void savePv(PV pv)
@@ -178,12 +80,12 @@ public class InformationRepository
         {
             if(pv.getFirstPerson() == user)
             {
-                writer.write(" , "+pv.getSecondPerson().getId());
+                writer.write(pv.getSecondPerson().getId()+"\n");
             }
 
             else if(pv.getSecondPerson() == user)
             {
-                writer.write(" , "+pv.getFirstPerson().getId());
+                writer.write(pv.getFirstPerson().getId()+"\n");
             }
         }
 
@@ -197,7 +99,33 @@ public class InformationRepository
     {
         try(FileWriter writer = new FileWriter(groupsPath , true))
         {
-            writer.write(" , "+group.getId());
+            writer.write(group.getId()+"\n");
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public void saveBioAndOtherData()
+    {
+        try(FileWriter writer = new FileWriter(bioPath , false))
+        {
+            writer.write(String.valueOf(user.getHowManyGroupCreated())+"\n"+user.getBio());
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public void saveContact(User contact)
+    {
+        try(FileWriter writer = new FileWriter(contactsPath , true))
+        {
+            writer.write(contact.getId()+"\n");
         }
 
         catch(IOException e)
@@ -211,12 +139,14 @@ public class InformationRepository
         List<String> ids = new ArrayList<>();
         try(BufferedReader reader = new BufferedReader(new FileReader(pvPath)))
         {
-            String line = reader.readLine();
-            if(line != null && !line.isEmpty())
+            String line;
+
+            while ((line = reader.readLine()) != null) 
             {
-                String[] arr = line.split(" , ");
-                for(String s : arr)
-                    ids.add(s.trim());
+                if(!line.isEmpty()) 
+                {
+                    ids.add(line.trim());
+                }
             }
         }
 
@@ -233,12 +163,14 @@ public class InformationRepository
         List<String> ids = new ArrayList<>();
         try(BufferedReader reader = new BufferedReader(new FileReader(groupsPath)))
         {
-            String line = reader.readLine();
-            if(line != null && !line.isEmpty())
+            String line;
+
+            while ((line = reader.readLine()) != null) 
             {
-                String[] arr = line.split(" , ");
-                for(String s : arr)
-                    ids.add(s.trim());
+                if(!line.isEmpty()) 
+                {
+                    ids.add(line.trim());
+                }
             }
         }
 
@@ -250,7 +182,171 @@ public class InformationRepository
         return ids;
     }
 
-    public Group findGroup(String groupId)
+    public int getHowManyGroupCreated()
+    {
+        int howManyGroupsCreate = -1;
+
+        try(BufferedReader reader = new BufferedReader(new FileReader(bioPath)))
+        {
+            String line = reader.readLine();
+            howManyGroupsCreate = Integer.parseInt(line);
+        }
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return howManyGroupsCreate;
+    }
+
+    public String getBio()
+    {
+        int counter = 0;
+        String bio = null;
+
+        try(BufferedReader reader = new BufferedReader(new FileReader(bioPath)))
+        {
+            String line;
+
+            while ((line = reader.readLine()) != null) 
+            {
+                if(counter == 0)
+                {
+                    counter++;
+                }
+
+                if(counter == 1)
+                {
+                    bio = line;
+                }
+            }
+        }
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return bio;
+    }
+
+    public List<String> getContactsId()
+    {
+        List<String> ids = new ArrayList<>();
+        try(BufferedReader reader = new BufferedReader(new FileReader(contactsPath)))
+        {
+            String line;
+
+            while ((line = reader.readLine()) != null) 
+            {
+                if(!line.isEmpty()) 
+                {
+                    ids.add(line.trim());
+                }
+            }
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return ids;
+    }
+
+    public void removePv(PV pv)
+    {
+        List<String> ids = getPvIds();
+        
+        for(String p : ids)
+        {
+            if((pv.getFirstPerson().getId()).equals(user.getId()))
+            {
+                if(p.equals(pv.getSecondPerson().getId()))
+                {
+                    ids.remove(p);
+                    break;
+                }
+            }
+
+            if((pv.getSecondPerson().getId()).equals(user.getId()))
+            {
+                if(p.equals(pv.getFirstPerson().getId()))
+                {
+                    ids.remove(p);
+                    break;
+                }
+            }
+        }
+
+        try(FileWriter writer = new FileWriter(pvPath , false))
+        {
+            for(String v : ids)
+            {
+                writer.write(v+"\n");
+            }
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public void removeGroup(Group group)
+    {
+        List<String> ids = getGroupIds();
+        
+        for(String g : ids)
+        {
+            if(g.equals(group.getId()))
+            {
+                ids.remove(g);
+                break;
+            }
+        }
+
+        try(FileWriter writer = new FileWriter(groupsPath , false))
+        {
+            for(String v : ids)
+            {
+                writer.write(v+"\n");
+            }
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public void removeContact(User contact)
+    {
+        List<String> ids = getContactsId();
+        
+        for(String c : ids)
+        {
+            if(c.equals(contact.getId()))
+            {
+                ids.remove(c);
+                break;
+            }
+        }
+
+        try(FileWriter writer = new FileWriter(contactsPath , false))
+        {
+            for(String v : ids)
+            {
+                writer.write(v+"\n");
+            }
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    /*public Group findGroup(String groupId)
     {
         try(BufferedReader reader = new BufferedReader(new FileReader(allGroupsPath)))
         {
@@ -258,7 +354,7 @@ public class InformationRepository
             while((line = reader.readLine()) != null)
             {
                 String[] data = line.split(" , ");
-                if(data[0].equals(groupId))
+                if(line.equals(groupId))
                 {
                     User tempUser = new User(data[2], "" ,"", true);
                     User owner = UserRepository.getInstance().findUser(tempUser);
@@ -274,7 +370,6 @@ public class InformationRepository
         }
 
         return null;
-    }
+    }*/
 
-    //bayad method benevisi ke etelaat ro list kone va bede , baraye remove etelaat bayad benevisi 
 }

@@ -74,10 +74,26 @@ public class PV extends Chat
         numOfMessages = 0;
     }
 
-    public void deletePv()
+    public void deletePv(String forWho)
     {
         deleteChat();
         isDeleted = true;
+
+        if(forWho.equals("both"))
+        {
+            firstPerson.removePv(this);
+            secondPerson.removePv(this);
+        }
+
+        else if(forWho.equals("first"))
+        {
+            firstPerson.removePv(this);
+        }
+
+        else if(forWho.equals("second"))
+        {
+            secondPerson.removePv(this);
+        }
     }
 
 

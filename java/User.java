@@ -24,7 +24,7 @@ public class User
     private InformationRepository informationRepository;
 
 
-    User(String id , String userName , String password, boolean loadMode)
+    public User(String id , String userName , String password, boolean loadMode)
     {
         this.id = id;
         this.userName = userName;
@@ -59,6 +59,11 @@ public class User
     public void addPv(PV p)
     {
         pv.add(p);
+    }
+
+    public void removePv(PV p)
+    {
+        pv.remove(p);
     }
 
     public boolean addContact (User contact)
