@@ -76,8 +76,13 @@ public class Server {
                 // Group Chats
                 json.append("\"groups\":[");
                 List<Group> userGroups = new ArrayList<>();
-                for (Group g : activeGroups) { //All Gropus (TEMP)
-                    userGroups.add(g);
+                for (Group g : activeGroups) {
+                    for (User m : g.getMembers()) {
+                        if (m.getId().equals(userId)) {
+                            userGroups.add(g);
+                            break;
+                        }
+                    }
                 }
                 for (int i = 0; i < userGroups.size(); i++) {
                     Group g = userGroups.get(i);
@@ -113,7 +118,7 @@ public class Server {
                 Message newMessage = new Message(0, senderId, receiverId, text, System.currentTimeMillis(), false, 0, false);
                 targetPv.send(newMessage);
                 sendResponse(exchange, 201, "{\"status\":\"success\",\"message\":\"Message sent to PV\"}");
-            }
+            } 
 
             else if ("GET".equalsIgnoreCase(method)) { // All Messages
                 String query = exchange.getRequestURI().getQuery();
@@ -127,6 +132,22 @@ public class Server {
                 }
                 PV targetPv = findOrCreatePV(u1, u2);
                 sendResponse(exchange, 200, convertMessagesToJson(targetPv.messages()));
+            }
+
+            else if ("DELETE".equalsIgnoreCase(method)) { // Delete PV
+                String body = getRequestBody(exchange);
+                String u1 = extractJsonValue(body, "user1");
+                String u2 = extractJsonValue(body, "user2");
+                User user1 = userRepo.findUser(new User(u1, "", ""));
+                User user2 = userRepo.findUser(new User(u2, "", ""));
+                if (user1 == null || user2 == null) {
+                    sendResponse(exchange, 404, "{\"error\":\"Users not found\"}");
+                    return;
+                }
+                PV targetPv = findOrCreatePV(user1, user2);
+                targetPv.deletePv();
+                sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"PV chat history deleted\"}");
+                return;
             }
         });
 
@@ -151,18 +172,13 @@ public class Server {
                     Group newGroup = new Group(owner, groupName, owner);
                     activeGroups.add(newGroup);
                     sendResponse(exchange, 201, String.format("{\"status\":\"success\",\"groupId\":\"%s\"}", newGroup.getId()));
-                }
+                } 
 
                 else if ("send".equalsIgnoreCase(action)) { // Send Message
                     String groupId = extractJsonValue(body, "groupId");
                     String senderId = extractJsonValue(body, "senderId");
                     String text = extractJsonValue(body, "text");
-                    Group targetGroup = null;
-                    for (Group g : activeGroups) 
-                        if (g.getId().equals(groupId)) { 
-                            targetGroup = g; 
-                            break; 
-                        }
+                    Group targetGroup = findGroupById(groupId);
                     if (targetGroup == null) {
                         sendResponse(exchange, 404, "{\"error\":\"Group not found\"}");
                         return;
@@ -171,22 +187,110 @@ public class Server {
                     targetGroup.send(groupMessage);
                     sendResponse(exchange, 201, "{\"status\":\"success\",\"message\":\"Message sent to group\"}");
                 }
-            }
-            
+
+                else if ("addMember".equalsIgnoreCase(action)) { // Add Member
+                    String groupId = extractJsonValue(body, "groupId");
+                    String memberId = extractJsonValue(body, "memberId");
+                    Group targetGroup = findGroupById(groupId);
+                    User newMem = userRepo.findUser(new User(memberId, "", ""));
+                    if (targetGroup != null && newMem != null) {
+                        targetGroup.addMember(newMem);
+                        newMem.addGroup(targetGroup);
+                        sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Member added successfully\"}");
+                    }
+                    else sendResponse(exchange, 404, "{\"error\":\"Group or User not found\"}");
+                }
+
+                else if ("removeMember".equalsIgnoreCase(action)) { // Remove Member
+                    String groupId = extractJsonValue(body, "groupId");
+                    String memberId = extractJsonValue(body, "memberId");
+                    Group targetGroup = findGroupById(groupId);
+                    User mem = userRepo.findUser(new User(memberId, "", ""));
+                    if (targetGroup != null && mem != null) {
+                        targetGroup.leftOrRemove(mem);
+                        sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Member removed successfully\"}");
+                    }
+                    else sendResponse(exchange, 404, "{\"error\":\"Group or User not found\"}");
+                }
+            } 
+
             else if ("GET".equalsIgnoreCase(method)) { // Group Messages
                 String query = exchange.getRequestURI().getQuery();
                 String groupId = query != null && query.contains("groupId=") ? query.split("groupId=")[1] : "";
-                Group targetGroup = null;
-                for (Group g : activeGroups)
-                    if (g.getId().equals(groupId)) {
-                        targetGroup = g;
-                        break;
-                    }
+                Group targetGroup = findGroupById(groupId);
                 if (targetGroup == null) {
                     sendResponse(exchange, 404, "{\"error\":\"Group not found\"}");
                     return;
                 }
                 sendResponse(exchange, 200, convertMessagesToJson(targetGroup.getMessages()));
+            }
+
+            else if ("DELETE".equalsIgnoreCase(method)) { // Delete Group
+                String body = getRequestBody(exchange);
+                String groupId = extractJsonValue(body, "groupId");
+                Group targetGroup = findGroupById(groupId);
+                if (targetGroup != null) {
+                    targetGroup.deleteChat();
+                    List<User> safeMembers = new ArrayList<>(targetGroup.getMembers());
+                    for (User u : safeMembers) {
+                        targetGroup.leftOrRemove(u);
+                    }
+                    activeGroups.remove(targetGroup);
+                    sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Group deleted for all\"}");
+                } 
+                else sendResponse(exchange, 404, "{\"error\":\"Group not found\"}");
+            }
+        });
+
+        // =========( Message Management )=========
+        server.createContext("/api/message", exchange -> {
+            handleCORS(exchange);
+            if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) return;
+            String body = getRequestBody(exchange);
+            String chatType = extractJsonValue(body, "chatType");
+            String msgIdStr = extractJsonValue(body, "messageId");
+            int messageId = msgIdStr.isEmpty() ? -1 : Integer.parseInt(msgIdStr);
+            Message targetMsg = null;
+            Chat targetChat = null;
+            if ("pv".equalsIgnoreCase(chatType)) {
+                String u1 = extractJsonValue(body, "user1");
+                String u2 = extractJsonValue(body, "user2");
+                User user1 = userRepo.findUser(new User(u1, "", ""));
+                User user2 = userRepo.findUser(new User(u2, "", ""));
+                if (user1 != null && user2 != null) {
+                    PV pv = findOrCreatePV(user1, user2);
+                    targetChat = pv;
+                    for (Message m : pv.messages())
+                        if (m.getId() == messageId) targetMsg = m; break;
+                }
+            }
+            else if ("group".equalsIgnoreCase(chatType)) {
+                String groupId = extractJsonValue(body, "groupId");
+                Group g = findGroupById(groupId);
+                targetChat = g;
+                if (g != null) {
+                    for (Message m : g.getMessages())
+                        if (m.getId() == messageId) targetMsg = m; break;
+                }
+            }
+            if (targetMsg == null || targetChat == null) {
+                sendResponse(exchange, 404, "{\"error\":\"Message or Chat not found\"}");
+                return;
+            }
+
+            if ("PUT".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String newText = extractJsonValue(body, "newText");
+                targetChat.edit(newText, targetMsg);
+                sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Message edited successfully\"}");
+            }
+
+            else if ("DELETE".equalsIgnoreCase(exchange.getRequestMethod())) {
+                targetChat.deleteMessage(targetMsg);
+                sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Message deleted successfully\"}");
+            }
+
+            else {
+                sendResponse(exchange, 405, "Method Not Allowed");
             }
         });
 
@@ -203,22 +307,32 @@ public class Server {
                 (p.getFirstPerson().getId().equals(u2.getId()) && p.getSecondPerson().getId().equals(u1.getId()))) {
                 return p;
             }
-        PV newPv = new PV(u1, u2);
+        PV newPv;
+        if (u1.getId().equals(u2.getId())) newPv = new SavedMessage(u1, u1);
+        else newPv = new PV(u1, u2);
         activePVs.add(newPv);
         return newPv;
     }
 
+    private static Group findGroupById(String groupId) {
+        for (Group g : activeGroups)
+            if (g.getId().equals(groupId)) return g;
+        return null;
+    }
+
     private static String convertMessagesToJson(List<Message> messages) {
         StringBuilder json = new StringBuilder("[");
-        for (int i = 0; i < messages.size(); i++) {
+        boolean first = true;
+        for (int i=0; i<messages.size(); i++) {
             Message m = messages.get(i);
             if (m.getDeleted()) continue;
+            if (!first) json.append(",");
+            first = false;
             String safeText = m.getText().replace("\"", "\\\"").replace("\n", "\\n");
             json.append(String.format(
-                "{\"id\":%d,\"senderId\":\"%s\",\"receiverId\":\"%s\",\"text\":\"%s\",\"time\":%d,\"edited\":%b}",
-                m.getId(), m.getSenderId(), m.getReceiverId(), safeText, m.getTime(), m.getEdited()
+                "{\"id\":%d,\"senderId\":\"%s\",\"receiverId\":\"%s\",\"text\":\"%s\",\"time\":%d,\"edited\":%b,\"numOfEdits\":%d}",
+                m.getId(), m.getSenderId(), m.getReceiverId(), safeText, m.getTime(), m.getEdited(), m.getNumOfEdits()
             ));
-            if (i < messages.size() - 1) json.append(",");
         }
         json.append("]");
         return json.toString();
