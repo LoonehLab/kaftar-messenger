@@ -1,12 +1,17 @@
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class InformationRepository 
 {
     private String dataOfUserPath;
     private String pvPath;
     private String groupsPath;
+    private String allGroupsPath;
     private String bioPath;
     private String contactsPath;
 
@@ -19,6 +24,7 @@ public class InformationRepository
         groupsPath = user.getId()+"group.txt";
         bioPath = user.getId()+"bio.txt";
         contactsPath = user.getId()+"contact.txt";
+        allGroupsPath = "groups.txt";
         this.user = user;
 
         try
@@ -51,6 +57,12 @@ public class InformationRepository
             if(!contactFile.exists())
             {
                contactFile.createNewFile();
+            }
+
+            File allGroupsFile = new File(allGroupsPath);
+            if(!allGroupsFile.exists())
+            {
+                allGroupsFile.createNewFile();
             }
         }
 
@@ -183,17 +195,86 @@ public class InformationRepository
 
     public void saveGroup(Group group)
     {
-        try(FileWriter writer = new FileWriter(pvPath , true))
+        try(FileWriter writer = new FileWriter(groupsPath , true))
         {
             writer.write(" , "+group.getId());
         }
 
-        catch(IOException e) 
+        catch(IOException e)
         {
-           e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
+    public List<String> getPvIds()
+    {
+        List<String> ids = new ArrayList<>();
+        try(BufferedReader reader = new BufferedReader(new FileReader(pvPath)))
+        {
+            String line = reader.readLine();
+            if(line != null && !line.isEmpty())
+            {
+                String[] arr = line.split(" , ");
+                for(String s : arr)
+                    ids.add(s.trim());
+            }
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return ids;
+    }
+
+    public List<String> getGroupIds()
+    {
+        List<String> ids = new ArrayList<>();
+        try(BufferedReader reader = new BufferedReader(new FileReader(groupsPath)))
+        {
+            String line = reader.readLine();
+            if(line != null && !line.isEmpty())
+            {
+                String[] arr = line.split(" , ");
+                for(String s : arr)
+                    ids.add(s.trim());
+            }
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return ids;
+    }
+
+    public Group findGroup(String groupId)
+    {
+        try(BufferedReader reader = new BufferedReader(new FileReader(allGroupsPath)))
+        {
+            String line;
+            while((line = reader.readLine()) != null)
+            {
+                String[] data = line.split(" , ");
+                if(data[0].equals(groupId))
+                {
+                    User tempUser = new User(data[2], "" ,"", true);
+                    User owner = UserRepository.getInstance().findUser(tempUser);
+                    if(owner == null) return null;
+                    return new Group(owner, data[1], owner);
+                }
+            }
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
 
     //bayad method benevisi ke etelaat ro list kone va bede , baraye remove etelaat bayad benevisi 
 }
