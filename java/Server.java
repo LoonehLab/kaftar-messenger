@@ -108,7 +108,7 @@ public class Server {
                     return;
                 }
                 PV targetPv = findOrCreatePV(sender, receiver);
-                Message newMessage = new Message(0, senderId, receiverId, text, System.currentTimeMillis(), false, 0, false);
+                Message newMessage = new Message(0, senderId, receiverId, text, System.currentTimeMillis(), false, false);
                 targetPv.send(newMessage);
                 sendResponse(exchange, 201, "{\"status\":\"success\",\"message\":\"Message sent to PV\"}");
             } 
@@ -138,7 +138,7 @@ public class Server {
                     return;
                 }
                 PV targetPv = findOrCreatePV(user1, user2);
-                targetPv.deletePv();
+                targetPv.deletePv("both");
                 sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"PV chat history deleted\"}");
                 return;
             }
@@ -176,7 +176,7 @@ public class Server {
                         sendResponse(exchange, 404, "{\"error\":\"Group not found\"}");
                         return;
                     }
-                    Message groupMessage = new Message(0, senderId, groupId, text, System.currentTimeMillis(), false, 0, false);
+                    Message groupMessage = new Message(0, senderId, groupId, text, System.currentTimeMillis(), false, false);
                     targetGroup.send(groupMessage);
                     sendResponse(exchange, 201, "{\"status\":\"success\",\"message\":\"Message sent to group\"}");
                 }
@@ -338,7 +338,7 @@ public class Server {
             String safeText = m.getText().replace("\"", "\\\"").replace("\n", "\\n");
             json.append(String.format(
                 "{\"id\":%d,\"senderId\":\"%s\",\"receiverId\":\"%s\",\"text\":\"%s\",\"time\":%d,\"edited\":%b,\"numOfEdits\":%d}",
-                m.getId(), m.getSenderId(), m.getReceiverId(), safeText, m.getTime(), m.getEdited(), m.getNumOfEdits()
+                m.getId(), m.getSenderId(), m.getReceiverId(), safeText, m.getTime(), m.getEdited()
             ));
         }
         json.append("]");

@@ -2,7 +2,7 @@ public class SavedMessage extends PV
 {
    SavedMessage(User first , User second)
    {
-    super(first, second);
+    super(first, second );
    } 
 
    @Override

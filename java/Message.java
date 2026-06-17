@@ -6,14 +6,13 @@ public class Message
     private String text;
     private long time;
     private boolean edited;
-    private int numOfEdits;
     private boolean deleted;
 
     private boolean seen;
 
     private Chat chat;
 
-    Message(int id , String senderId , String receiverId , String text , long time , boolean edited , int numOfEdits , boolean deleted)
+    public Message(int id , String senderId , String receiverId , String text , long time , boolean edited, boolean deleted)
     {
         this.id = id;
         this.senderId = senderId;
@@ -21,11 +20,24 @@ public class Message
         this.text = text;
         this.time = time;
         this.edited = edited;
-        this.numOfEdits = numOfEdits;
         this.deleted = deleted;
         chat = null;
 
         this.seen = false;
+    }
+
+    public Message(int id , String senderId , String receiverId , String text , long time , boolean edited, boolean deleted , boolean seen)
+    {
+        this.id = id;
+        this.senderId = senderId;
+        this.receiverId = receiverId;
+        this.text = text;
+        this.time = time;
+        this.edited = edited;
+        this.deleted = deleted;
+        chat = null;
+
+        this.seen = seen;
     }
 
     public int getId(){ return id;}
@@ -34,14 +46,12 @@ public class Message
     public String getText(){ return text;}
     public long getTime(){ return time;}
     public boolean getEdited(){ return edited; }
-    public int getNumOfEdits(){ return numOfEdits; }
     public boolean getDeleted(){ return deleted; }
     public boolean getSeen(){ return seen; }
 
     public void setText(String text)
     {
         this.text = text;
-        numOfEdits++;
         edited = true;
     }
 

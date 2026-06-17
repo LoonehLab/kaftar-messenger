@@ -10,6 +10,8 @@ public class PV extends Chat
 
     protected List<Message> messages;
 
+    private PvRepository pvRepository;
+
     PV(User first , User second)
     {
         firstPerson = first;
@@ -18,6 +20,8 @@ public class PV extends Chat
         isDeleted = false;
 
         messages = new ArrayList<>();
+
+        pvRepository = new PvRepository(this);
 
     }
 
@@ -102,4 +106,5 @@ public class PV extends Chat
     public int getNumOfMessages(){ return numOfMessages; }
     public List<Message> messages() { return messages; }
     public boolean getIsDeleted() { return isDeleted; }
+    public PvRepository getPvRepository(){ return pvRepository; }
 }
