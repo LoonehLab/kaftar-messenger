@@ -109,5 +109,5 @@ public class Group extends Chat
     public List<Message> getMessages() { return messages; }
     public User getOwner(){ return owner; }
 
-    public void setName(String name) { this.name= name; }
+    public void setName(String name) { this.name = name; }
 }

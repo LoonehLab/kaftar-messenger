@@ -4,7 +4,7 @@ import java.util.*;
 public class PvRepository 
 {
     private String filePath;
-    PV pv;
+    private PV pv;
 
     PvRepository(PV pv)
     {
@@ -42,6 +42,7 @@ public class PvRepository
         }
     }
 
+    //fekr konam file kolan pak she behtare
     public void deletPv()
     {
         try(FileWriter writer = new FileWriter(filePath , false))
@@ -129,6 +130,15 @@ public class PvRepository
 
             else
             {
+                try(FileWriter writer = new FileWriter(filePath , false))
+                {
+                    writer.write("");
+                }
+
+                catch(IOException e) 
+                {
+                   e.printStackTrace();
+                } 
                 addMessage(m);
             }
         }

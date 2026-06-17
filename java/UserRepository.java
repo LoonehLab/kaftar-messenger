@@ -100,6 +100,21 @@ public class UserRepository
       return null;
    }
 
+   public User findUserById(String id)
+   {
+      List<User> users = makeArrayOfAllUsers();
+
+      for(int i=0 ; i<users.size() ; i++)
+      {
+         if((users.get(i).getId()).equals(id))
+         {
+            return users.get(i);
+         }
+      }
+
+      return null;
+   }
+
    public List<User> getAllUsers()
    {
       return makeArrayOfAllUsers();
