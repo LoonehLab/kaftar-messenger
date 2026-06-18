@@ -328,22 +328,22 @@ public class Server {
     }
 
     private static String convertMessagesToJson(List<Message> messages) {
-        StringBuilder json = new StringBuilder("[");
-        boolean first = true;
-        for (int i=0; i<messages.size(); i++) {
-            Message m = messages.get(i);
-            if (m.getDeleted()) continue;
-            if (!first) json.append(",");
-            first = false;
-            String safeText = m.getText().replace("\"", "\\\"").replace("\n", "\\n");
-            json.append(String.format(
-                "{\"id\":%d,\"senderId\":\"%s\",\"receiverId\":\"%s\",\"text\":\"%s\",\"time\":%d,\"edited\":%b,\"numOfEdits\":%d}",
-                m.getId(), m.getSenderId(), m.getReceiverId(), safeText, m.getTime(), m.getEdited()
-            ));
-        }
-        json.append("]");
-        return json.toString();
+    StringBuilder json = new StringBuilder("[");
+    boolean first = true;
+    for (int i = 0; i < messages.size(); i++) {
+        Message m = messages.get(i);
+        if (m.getDeleted()) continue;
+        if (!first) json.append(",");
+        first = false;
+        String safeText = m.getText().replace("\"", "\\\"").replace("\n", "\\n");
+        json.append(String.format(
+            "{\"id\":%d,\"senderId\":\"%s\",\"receiverId\":\"%s\",\"text\":\"%s\",\"time\":%d,\"edited\":%b}",
+            m.getId(), m.getSenderId(), m.getReceiverId(), safeText, m.getTime(), m.getEdited()
+        ));
     }
+    json.append("]");
+    return json.toString();
+}
 
     private static void handleCORS(HttpExchange exchange) throws IOException {
         exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");

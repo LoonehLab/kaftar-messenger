@@ -61,92 +61,65 @@ public class PvRepository
         } 
     }
 
-    public void addMessage(Message message)
-    {
-        try(FileWriter writer = new FileWriter(filePath , true))
-        {
-            writer.write(message.getText()+" , "+message.getId()+" , "+message.getSenderId()+" , "+message.getReceiverId()+" , "+message.getTime()+" , "+message.getEdited()+" , "+message.getSeen()+"\n");
-        }
-
-        catch(IOException e) 
-        {
-           e.printStackTrace();
-        } 
+    public void addMessage(Message message) {
+    try (FileWriter writer = new FileWriter(filePath, true)) {
+        String cleanText = message.getText().replace("║", " ").replace("\n", " ");
+        message.setText(cleanText);
+        writer.write("║" + message.getId() + " , " + message.getSenderId() + " , " + 
+                     message.getReceiverId() + " , " + message.getTime() + " , " + 
+                     message.getEdited() + " , " + message.getSeen() + " , " + cleanText + "\n");
+    } catch (IOException e) {
+        e.printStackTrace();
     }
+}
 
-    public List<Message> getArrayOfMessages()
-    {
+    public List<Message> getArrayOfMessages() {
         List<Message> array = new ArrayList<>();
-        int counter = 1;
+        File file = new File(filePath);
+        if (!file.exists()) return array;
 
-        try(BufferedReader reader = new BufferedReader(new FileReader(filePath)))
-        {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            reader.readLine(); // Sender
+            reader.readLine(); // Receiver
+            reader.readLine(); // isDeleted
+
             String line;
-
-           while ((line = reader.readLine()) != null) 
-           {
-            if(counter == 1 || counter == 2 || counter == 3)
-            {
-                counter++;
-                continue;
-            }
-
-            else
-            {
-                String[] messageData = line.split(" , ");
-
-                int newId = Integer.parseInt(messageData[1]);
-
-                Message newMessage = new Message(newId, messageData[2], messageData[3], messageData[0] , Long.parseLong(messageData[4]) ,  Boolean.parseBoolean(messageData[5]) , false, Boolean.parseBoolean(messageData[6]));
-
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty() || !line.startsWith("║")) continue;
+                String rawMessage = line.substring(1); 
+                String[] messageData = rawMessage.split(" , ", 7); 
+                if (messageData.length < 7) continue;
+                int newId = Integer.parseInt(messageData[0].trim());
+                String sender = messageData[1].trim();
+                String receiver = messageData[2].trim();
+                long time = Long.parseLong(messageData[3].trim());
+                boolean edited = Boolean.parseBoolean(messageData[4].trim());
+                boolean seen = Boolean.parseBoolean(messageData[5].trim());
+                String text = messageData[6];
+                Message newMessage = new Message(newId, sender, receiver, text, time, edited, false, seen);
                 array.add(newMessage);
             }
-           }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-
-        catch(IOException e) 
-        {
-           e.printStackTrace();
-        } 
-
         return array;
     }
 
-    public void removeMessage(Message mess)
-    {
+    public void removeMessage(Message mess) {
         List<Message> keeper = this.getArrayOfMessages();
-
-        try(FileWriter writer = new FileWriter(filePath , false))
-        {
-            writer.write(pv.getFirstPerson().getId()+"\n"+pv.getSecondPerson().getId()+"\n"+pv.getIsDeleted()+"\n");
-        }
-
-        catch(IOException e) 
-        {
-           e.printStackTrace();
-        } 
-
-        for(Message m : keeper)
-        {
-            if(mess.getId() == m.getId())
-            {
-                continue;
-            }
-
-            else
-            {
-                try(FileWriter writer = new FileWriter(filePath , false))
-                {
-                    writer.write("");
+        try (FileWriter writer = new FileWriter(filePath, false)) {
+            writer.write(pv.getFirstPerson().getId() + "\n" + pv.getSecondPerson().getId() + "\n" + pv.getIsDeleted() + "\n");      
+            for (Message m : keeper) {
+                if (mess.getId() == m.getId()) {
+                    continue;
                 }
-
-                catch(IOException e) 
-                {
-                   e.printStackTrace();
-                } 
-                addMessage(m);
+                String messageStr = "║" + m.getId() + " , " + m.getSenderId() + " , " + 
+                                    m.getReceiverId() + " , " + m.getTime() + " , " + 
+                                    m.getEdited() + " , " + m.getSeen() + " , " + m.getText() + "\n";
+                writer.write(messageStr);
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
-
 }

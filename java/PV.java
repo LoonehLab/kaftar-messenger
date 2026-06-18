@@ -22,7 +22,8 @@ public class PV extends Chat
         messages = new ArrayList<>();
 
         pvRepository = new PvRepository(this);
-
+        this.messages = pvRepository.getArrayOfMessages();
+        this.numOfMessages = this.messages.size();
     }
 
 
@@ -55,6 +56,7 @@ public class PV extends Chat
             firstPerson.addReceivedMessage(text);
             secondPerson.addSentMessage(text);
         }
+        pvRepository.addMessage(text);
     }
 
     public void edit(String newText , Message mes)
@@ -66,6 +68,7 @@ public class PV extends Chat
     {
         mes.setDeleted(true);
         numOfMessages--;
+        pvRepository.removeMessage(mes);
     }
 
     public void deleteChat()
