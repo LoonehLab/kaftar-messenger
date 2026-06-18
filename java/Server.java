@@ -6,7 +6,7 @@ import java.util.*;
 
 public class Server {
     private static final UserRepository userRepo = UserRepository.getInstance();
-    private static final GroupRepository groupRepo = GroupRepository.getInstance();
+    private static final AllGroupsRepository groupRepo = AllGroupsRepository.getInstance();
 
     public static void main(String[] args) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(8081), 0);

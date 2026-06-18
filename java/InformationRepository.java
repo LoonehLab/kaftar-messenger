@@ -20,7 +20,7 @@ public class InformationRepository
 
     public InformationRepository(User user)
     {
-        userDirectory = ".." + File.separator + "data" + File.separator + user.getId();
+        userDirectory = ".." + File.separator + "data" + File.separator + "users" + File.separator + user.getId();
         pvPath = user.getId() + "pv.txt";
         groupsPath = user.getId() + "group.txt";
         bioPath = user.getId() + "bio.txt";

@@ -9,6 +9,8 @@ public class Group extends Chat
     private int numOfMessages;
     private String name;
 
+    private GroupRepository groupRepository;
+
     Group(User owner , String name , User ... mem)
     {
         this.name = name;
@@ -30,6 +32,9 @@ public class Group extends Chat
 
         id = (owner.getId())+Integer.toString(owner.getHowManyGroupCreated());
         messages = new ArrayList<>();
+
+        groupRepository = new GroupRepository(this);
+        this.messages = groupRepository.getArrayOfMessages();
     }
 
     public void send(Message text)
@@ -56,6 +61,7 @@ public class Group extends Chat
                 return;
             }
         }
+        groupRepository.addMessage(text);
     }
 
     public void edit(String newText , Message mes)

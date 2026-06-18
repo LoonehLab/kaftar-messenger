@@ -3,18 +3,16 @@ import java.util.*;
 
 public class UserRepository 
 {
-   private String filePath = "users.txt";
+   private String filePath = ".." + File.separator + "data" + File.separator + "users.txt";
    
    private UserRepository()
    {
     try
     {
       File file = new File(filePath);
-
-      if(!file.exists())
-      {
-         file.createNewFile();
-      }
+      File folder = new File(".." + File.separator + "data");
+      if(!folder.exists()) folder.mkdir();
+      if(!file.exists()) file.createNewFile();
     }
 
     catch(IOException e) 
