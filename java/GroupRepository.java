@@ -35,24 +35,17 @@ public class GroupRepository
                dataFile.createNewFile();
 
                try(FileWriter writer = new FileWriter(dataFile, true))
-                {
-                    writer.write(group.getId()+"\n"+group.getName()+"\n"+group.getOwner().getId()+"\n");
-                }
-                catch(IOException e)
-                {
+               {
+                    writer.write(group.getId() + "\n" + group.getName() + "\n" + group.getOwner().getId() + "\n");
+               }
+               catch(IOException e)
+               {
                     e.printStackTrace();
-                }
+               }
             }
 
-            if(!memberFile.exists())
-            {
-               memberFile.createNewFile();
-            }
-
-            if(!messageFile.exists())
-            {
-                messageFile.createNewFile();
-            }
+            if(!memberFile.exists()) memberFile.createNewFile();
+            if(!messageFile.exists()) messageFile.createNewFile();
         }
         catch(IOException e)
         {
@@ -62,11 +55,10 @@ public class GroupRepository
 
     public void changeData(String id , String name , String ownerId)
     {
-        try(FileWriter writer = new FileWriter(dataPath,false))
+        try(FileWriter writer = new FileWriter(dataPath, false))
         {
-            writer.write(id+"\n"+name+"\n"+ownerId+"\n");
+            writer.write(id + "\n" + name + "\n" + ownerId + "\n");
         }
-
         catch(IOException e)
         {
             e.printStackTrace();
@@ -75,11 +67,14 @@ public class GroupRepository
 
     public void addMessage(Message message)
     {
-        try(FileWriter writer = new FileWriter(messagePath , true))
+        try(FileWriter writer = new FileWriter(messagePath, true))
         {
-            writer.write(message.getText()+" , "+message.getId()+" , "+message.getSenderId()+" , "+message.getReceiverId()+" , "+message.getTime()+" , "+message.getEdited()+" , "+message.getSeen()+"\n");
+            String cleanText = message.getText().replace("║", " ").replace("\n", " ");
+            message.setText(cleanText);
+            writer.write("║" + message.getId() + " , " + message.getSenderId() + " , " + 
+                         message.getReceiverId() + " , " + message.getTime() + " , " + 
+                         message.getEdited() + " , " + message.getSeen() + " , " + cleanText + "\n");
         }
-
         catch(IOException e) 
         {
            e.printStackTrace();
@@ -89,23 +84,34 @@ public class GroupRepository
     public List<Message> getArrayOfMessages()
     {
         List<Message> array = new ArrayList<>();
+        File file = new File(messagePath);
+        
+        if(!file.exists()) return array;
 
-        try(BufferedReader reader = new BufferedReader(new FileReader(messagePath)))
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
             String line;
+            while ((line = reader.readLine()) != null) 
+            {
+               if (line.trim().isEmpty() || !line.startsWith("║")) continue;
 
-           while ((line = reader.readLine()) != null) 
-           {
-               String[] messageData = line.split(" , ");
+               String rawMessage = line.substring(1);
+               String[] messageData = rawMessage.split(" , ", 7);
+               
+               if(messageData.length < 7) continue;
 
-               int newId = Integer.parseInt(messageData[1]);
- 
-               Message newMessage = new Message(newId, messageData[2], messageData[3], messageData[0] , Long.parseLong(messageData[4]) ,  Boolean.parseBoolean(messageData[5]) , false, Boolean.parseBoolean(messageData[6]));
+               int newId = Integer.parseInt(messageData[0].trim());
+               String sender = messageData[1].trim();
+               String receiver = messageData[2].trim();
+               long time = Long.parseLong(messageData[3].trim());
+               boolean edited = Boolean.parseBoolean(messageData[4].trim());
+               boolean seen = Boolean.parseBoolean(messageData[5].trim());
+               String text = messageData[6];
 
+               Message newMessage = new Message(newId, sender, receiver, text, time, edited, false, seen);
                array.add(newMessage);
-           }
+            }
         }
-
         catch(IOException e) 
         {
            e.printStackTrace();
@@ -117,38 +123,34 @@ public class GroupRepository
     public void removeMessage(Message mess)
     {
         List<Message> keeper = this.getArrayOfMessages();
-
-        try(FileWriter writer = new FileWriter(messagePath , false))
+        try(FileWriter writer = new FileWriter(messagePath, false))
         {
-            writer.write("");
+            writer.write(group.getId() + "\n" + group.getName() + "\n" + group.getOwner().getId() + "\n");
+            
+            for(Message m : keeper)
+            {
+                if(mess.getId() == m.getId()) continue;
+                else
+                {
+                    String messageStr = "║" + m.getId() + " , " + m.getSenderId() + " , " + 
+                                        m.getReceiverId() + " , " + m.getTime() + " , " + 
+                                        m.getEdited() + " , " + m.getSeen() + " , " + m.getText() + "\n";
+                    writer.write(messageStr);
+                }
+            }
         }
-
         catch(IOException e) 
         {
            e.printStackTrace();
         } 
-
-        for(Message m : keeper)
-        {
-            if(mess.getId() == m.getId())
-            {
-                continue;
-            }
-
-            else
-            {
-                addMessage(m);
-            }
-        }
     }
 
     public void addMember(User member)
     {
-        try(FileWriter writer = new FileWriter(memberPath , true))
+        try(FileWriter writer = new FileWriter(memberPath, true))
         {
-            writer.write(member.getId()+"\n");
+            writer.write(member.getId() + "\n");
         }
-
         catch(IOException e) 
         {
            e.printStackTrace();
@@ -158,17 +160,20 @@ public class GroupRepository
     public List<String> getArrayOfMembersId()
     {
         List<String> ids = new ArrayList<>();
-
-        try(BufferedReader reader = new BufferedReader(new FileReader(memberPath)))
-        {
-            String line;
-
-           while ((line = reader.readLine()) != null) 
-           {
-               ids.add(line);
-           }
+        File file = new File(memberPath);
+        
+        if(!file.exists()) {
+            return ids;
         }
 
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        {
+            String line;
+            while ((line = reader.readLine()) != null) 
+            {
+               ids.add(line);
+            }
+        }
         catch(IOException e) 
         {
            e.printStackTrace();
@@ -181,34 +186,29 @@ public class GroupRepository
     {
         List<String> ids = getArrayOfMembersId();
 
+        try(FileWriter writer = new FileWriter(memberPath, false))
+        {
+            writer.write("");
+        }
+        catch(IOException e) 
+        {
+           e.printStackTrace();
+        } 
+
         for(String i : ids)
         {
-            if(i == member.getId())
+            if(i.equals(member.getId()))
             {
                 continue;
             }
-
             else
             {
-                try(FileWriter writer = new FileWriter(memberPath , false))
-                {
-                    writer.write("");
-                }
-
-                catch(IOException e) 
-                {
-                   e.printStackTrace();
-                } 
-
                 UserRepository userRepository = UserRepository.getInstance();
-
                 User newUser = userRepository.findUserById(i);
-
-                addMember(newUser);
+                if(newUser != null) {
+                    addMember(newUser);
+                }
             }
         }
     }
-
-    //delete group
-
 }
