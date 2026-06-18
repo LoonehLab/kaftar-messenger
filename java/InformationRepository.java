@@ -20,91 +20,77 @@ public class InformationRepository
 
     public InformationRepository(User user)
     {
-        userDirectory = user.getId();
-        //dataOfUserPath = user.getId()+".txt";
-        pvPath = user.getId()+"pv.txt";
-        groupsPath = user.getId()+"group.txt";
-        bioPath = user.getId()+"bio.txt";
-        contactsPath = user.getId()+"contact.txt";
+        userDirectory = ".." + File.separator + "data" + File.separator + user.getId();
+        pvPath = user.getId() + "pv.txt";
+        groupsPath = user.getId() + "group.txt";
+        bioPath = user.getId() + "bio.txt";
+        contactsPath = user.getId() + "contact.txt";
         allGroupsPath = "groups.txt";
         this.user = user;
-
         try
         {
             File folder = new File(userDirectory);
             if(!folder.exists())
             {
-               folder.mkdir();
+            folder.mkdirs();
             }
-
-            File pvFile = new File(folder , pvPath);
+            File pvFile = new File(folder, pvPath);
             if(!pvFile.exists())
             {
-               pvFile.createNewFile();
+            pvFile.createNewFile();
             }
-
-            File groupFile = new File(folder , groupsPath);
+            File groupFile = new File(folder, groupsPath);
             if(!groupFile.exists())
             {
-               groupFile.createNewFile();
+            groupFile.createNewFile();
             }
-
-            File bioAndOtherDataFile = new File(folder , bioPath);
-            if(!bioAndOtherDataFile.exists())
+            File bioFile = new File(folder, bioPath);
+            if(!bioFile.exists())
             {
-               bioAndOtherDataFile.createNewFile();
+            bioFile.createNewFile();
             }
-
-            File contactFile = new File(folder , contactsPath);
+            File contactFile = new File(folder, contactsPath);
             if(!contactFile.exists())
             {
-               contactFile.createNewFile();
-            }
-
-            File allGroupsFile = new File(folder , allGroupsPath);
-            if(!allGroupsFile.exists())
-            {
-                allGroupsFile.createNewFile();
+            contactFile.createNewFile();
             }
         }
-
-        catch(IOException e)
+        catch(IOException e) 
         {
-            e.printStackTrace();
+        e.printStackTrace();
         }
     }
 
     public void savePv(PV pv)
     {
-        try(FileWriter writer = new FileWriter(pvPath , true))
+        File file = new File(userDirectory, pvPath);
+        try(FileWriter writer = new FileWriter(file, true))
         {
             if(pv.getFirstPerson() == user)
             {
-                writer.write(pv.getSecondPerson().getId()+"\n");
+                writer.write(" , "+pv.getSecondPerson().getId());
             }
-
             else if(pv.getSecondPerson() == user)
             {
-                writer.write(pv.getFirstPerson().getId()+"\n");
+                writer.write(" , "+pv.getFirstPerson().getId());
             }
         }
-
         catch(IOException e) 
         {
-           e.printStackTrace();
+        e.printStackTrace();
         }
     }
 
     public void saveGroup(Group group)
     {
-        try(FileWriter writer = new FileWriter(groupsPath , true))
+        File file = new File(userDirectory, groupsPath);
+        try(FileWriter writer = new FileWriter(file, true))
         {
-            writer.write(group.getId()+"\n");
+            writer.write(" , "+group.getId());
         }
-
-        catch(IOException e)
+        catch(IOException e) 
         {
-            e.printStackTrace();
+        e.printStackTrace();
         }
     }
 
