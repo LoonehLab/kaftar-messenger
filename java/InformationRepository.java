@@ -12,7 +12,6 @@ public class InformationRepository
     //private String dataOfUserPath;
     private String pvPath;
     private String groupsPath;
-    private String allGroupsPath;
     private String bioPath;
     private String contactsPath;
 
@@ -25,7 +24,6 @@ public class InformationRepository
         groupsPath = user.getId() + "group.txt";
         bioPath = user.getId() + "bio.txt";
         contactsPath = user.getId() + "contact.txt";
-        allGroupsPath = "groups.txt";
         this.user = user;
         try
         {
