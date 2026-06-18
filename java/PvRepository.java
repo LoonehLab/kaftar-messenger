@@ -9,37 +9,42 @@ public class PvRepository
     PvRepository(PV pv)
     {
         this.pv = pv;
-        filePath = pv.getFirstPerson().getId()+pv.getSecondPerson().getId()+".txt";
+        String pvsDirectory = ".." + File.separator + "data" + File.separator + "pvs";
+        
+        File folder = new File(pvsDirectory);
+        if (!folder.exists()) {
+            folder.mkdirs();
+        }
 
-        try
+        String fileName = pv.getFirstPerson().getId() + pv.getSecondPerson().getId() + ".txt";
+        File file = new File(folder, fileName);
+
+        if (!file.exists()) 
         {
-            File file = new File(filePath);
-            if(!file.exists()) 
+            String reverseFileName = pv.getSecondPerson().getId() + pv.getFirstPerson().getId() + ".txt";
+            File reverseFile = new File(folder, reverseFileName);
+
+            if (reverseFile.exists()) 
             {
-                filePath = pv.getSecondPerson().getId()+pv.getFirstPerson().getId()+".txt";
-
-                if(!file.exists())
+                file = reverseFile;
+            }
+            else 
+            {
+                try 
                 {
-                    filePath = pv.getFirstPerson().getId()+pv.getSecondPerson().getId()+".txt";
                     file.createNewFile();
-
-                    try(FileWriter writer = new FileWriter(filePath , true))
+                    try (FileWriter writer = new FileWriter(file, true)) 
                     {
-                        writer.write(pv.getFirstPerson().getId()+"\n"+pv.getSecondPerson().getId()+"\n"+pv.getIsDeleted()+"\n");
+                        writer.write(pv.getFirstPerson().getId() + "\n" + pv.getSecondPerson().getId() + "\n" + pv.getIsDeleted() + "\n");
                     }
-
-                    catch(IOException e) 
-                    {
-                       e.printStackTrace();
-                    }
+                } 
+                catch (IOException e) 
+                {
+                    e.printStackTrace();
                 }
             }
         }
-
-        catch(IOException e)
-        {
-            e.printStackTrace();
-        }
+        filePath = file.getAbsolutePath();
     }
 
     //fekr konam file kolan pak she behtare

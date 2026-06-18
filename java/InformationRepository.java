@@ -68,11 +68,11 @@ public class InformationRepository
         {
             if(pv.getFirstPerson() == user)
             {
-                writer.write(" , "+pv.getSecondPerson().getId());
+                writer.write(pv.getSecondPerson().getId()+"\n");
             }
             else if(pv.getSecondPerson() == user)
             {
-                writer.write(" , "+pv.getFirstPerson().getId());
+                writer.write(pv.getFirstPerson().getId()+"\n");
             }
         }
         catch(IOException e) 
@@ -86,7 +86,7 @@ public class InformationRepository
         File file = new File(userDirectory, groupsPath);
         try(FileWriter writer = new FileWriter(file, true))
         {
-            writer.write(" , "+group.getId());
+            writer.write(group.getId()+"\n");
         }
         catch(IOException e) 
         {
@@ -123,10 +123,10 @@ public class InformationRepository
     public List<String> getPvIds()
     {
         List<String> ids = new ArrayList<>();
-        try(BufferedReader reader = new BufferedReader(new FileReader(pvPath)))
+        File file = new File(userDirectory, pvPath);
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
             String line;
-
             while ((line = reader.readLine()) != null) 
             {
                 if(!line.isEmpty()) 
@@ -147,10 +147,10 @@ public class InformationRepository
     public List<String> getGroupIds()
     {
         List<String> ids = new ArrayList<>();
-        try(BufferedReader reader = new BufferedReader(new FileReader(groupsPath)))
+        File file = new File(userDirectory, groupsPath);
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
             String line;
-
             while ((line = reader.readLine()) != null) 
             {
                 if(!line.isEmpty()) 
