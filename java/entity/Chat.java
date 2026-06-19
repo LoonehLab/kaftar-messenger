@@ -1,3 +1,5 @@
+package entity;
+
 public abstract class Chat 
 {
     //background 

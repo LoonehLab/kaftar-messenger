@@ -1,3 +1,7 @@
+package entity;
+
+import dao.*;
+
 import java.util.*;
 
 public class Group extends Chat
@@ -9,9 +13,9 @@ public class Group extends Chat
     private int numOfMessages;
     private String name;
 
-    private GroupRepository groupRepository;
+    private dao.GroupRepository groupRepository;
 
-    Group(User owner , String name , User ... mem)
+    public Group(User owner , String name , User ... mem)
     {
         this.name = name;
         this.numOfMessages = 0;
@@ -39,7 +43,6 @@ public class Group extends Chat
 
     public void send(Message text)
     {
-        text.setChat((Group)this);
         messages.add(text);
         numOfMessages++;
         text.setId(messages.size());

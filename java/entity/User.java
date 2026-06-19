@@ -1,3 +1,7 @@
+package entity;
+
+import dao.*;
+
 import java.util.*;
 
 public class User
@@ -13,7 +17,6 @@ public class User
     private List<Group> groups;
     private List<User> contacts;
 
-    private SavedMessage savedMessage;
     private List<Message> messageOfSavedMessage;
 
     private List<Message> sentMessages;
@@ -38,7 +41,6 @@ public class User
         receivedMessages = new ArrayList<>();
         contacts = new ArrayList<>();
 
-        savedMessage = new SavedMessage(this, this);
         messageOfSavedMessage = new ArrayList<>();
 
         howManyGroupsCreate = 0;

@@ -1,3 +1,7 @@
+package dao;
+
+import entity.*;
+
 import java.io.*;
 import java.util.*;
 
@@ -6,7 +10,7 @@ public class PvRepository
     private String filePath;
     private PV pv;
 
-    PvRepository(PV pv)
+    public PvRepository(PV pv)
     {
         this.pv = pv;
         String pvsDirectory = ".." + File.separator + "data" + File.separator + "pvs";

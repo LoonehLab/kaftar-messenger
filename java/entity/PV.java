@@ -1,3 +1,7 @@
+package entity;
+
+import dao.*;
+
 import java.util.*;
 
 public class PV extends Chat 
@@ -12,7 +16,7 @@ public class PV extends Chat
 
     private PvRepository pvRepository;
 
-    PV(User first , User second)
+    public PV(User first , User second)
     {
         firstPerson = first;
         secondPerson = second;
@@ -40,7 +44,6 @@ public class PV extends Chat
             isDeleted = false;
         }
         
-        text.setChat((PV)this);
         messages.add(text);
         numOfMessages++;
         text.setId(messages.size());

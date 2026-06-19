@@ -1,3 +1,7 @@
+package dao;
+
+import entity.*;
+
 import java.io.*;
 import java.util.*;
 
@@ -9,7 +13,7 @@ public class GroupRepository
     private String dataPath;
     private Group group;
 
-    GroupRepository(Group group)
+    public GroupRepository(Group group)
     {
         this.group = group;
         directoryPath = ".." + File.separator + "data" + File.separator + "groups" + File.separator + group.getId();

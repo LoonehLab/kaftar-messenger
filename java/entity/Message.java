@@ -1,3 +1,5 @@
+package entity;
+
 public class Message 
 {
     private int id;
@@ -10,7 +12,6 @@ public class Message
 
     private boolean seen;
 
-    private Chat chat;
 
     public Message(int id , String senderId , String receiverId , String text , long time , boolean edited, boolean deleted)
     {
@@ -21,7 +22,6 @@ public class Message
         this.time = time;
         this.edited = edited;
         this.deleted = deleted;
-        chat = null;
 
         this.seen = false;
     }
@@ -35,7 +35,6 @@ public class Message
         this.time = time;
         this.edited = edited;
         this.deleted = deleted;
-        chat = null;
 
         this.seen = seen;
     }
@@ -57,7 +56,6 @@ public class Message
 
     public void setDeleted(boolean isDeleted){ deleted = isDeleted;}
     public void setId(int id){ this.id = id;}
-    public void setChat(Chat chat){ this.chat = chat;}
 
     
     public void messageSeen(){ this.seen = true; }

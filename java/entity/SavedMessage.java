@@ -1,8 +1,9 @@
+package entity;
+
 public class SavedMessage extends PV
 {
-   SavedMessage(User first , User second)
-   {
-    super(first, second );
+   public SavedMessage(User first , User second) {
+      super(first, second );
    } 
 
    @Override
@@ -14,7 +15,6 @@ public class SavedMessage extends PV
    @Override
    public void send(Message text)
    {
-      text.setChat((PV)this);
       messages.add(text);
       numOfMessages++;
       text.setId(messages.size());
