@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =============( User Data and Chats )=============
-    async function initUserApp() {
+    async function LoadChatrooms() {
         try {
             const res = await fetch(`${API_BASE_URL}/user/init?userId=${CURRENT_USER_ID}`);
             const userData = await res.json();
@@ -168,6 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 messageInput.value = '';
                 await loadMessages();
+                await loadChatrooms();
             }
         } catch (error) {
             console.error('Error sending message:', error);
@@ -178,12 +179,123 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') sendMessage();
     });
 
-    // Update Messages (Temp)
+    // =============( New Chat Modal )=============
+    const contactsModal = document.getElementById('contactsModal');
+    const openContactsBtn = document.getElementById('openContactsBtn');
+    const closeContactsBtn = document.getElementById('closeContactsBtn');
+    const modalContactsList = document.getElementById('modalContactsList');
+    const createGroupModalBtn = document.getElementById('createGroupModalBtn');
+    const groupCreationForm = document.getElementById('groupCreationForm');
+    const groupNameInput = document.getElementById('groupNameInput');
+    const submitGroupBtn = document.getElementById('submitGroupBtn');
+    const cancelGroupBtn = document.getElementById('cancelGroupBtn');
+    if (openContactsBtn) {
+        openContactsBtn.addEventListener('click', () => {
+            contactsModal.classList.add('active');
+            if(groupCreationForm) groupCreationForm.style.display = 'none';
+            if(createGroupModalBtn) createGroupModalBtn.style.display = 'flex';
+            fetchContacts(); 
+        });
+    }
+    if (closeContactsBtn) {
+        closeContactsBtn.addEventListener('click', () => {
+            contactsModal.classList.remove('active');
+        });
+    }
+    if (createGroupModalBtn) {
+        createGroupModalBtn.addEventListener('click', () => {
+            createGroupModalBtn.style.display = 'none';
+            groupCreationForm.style.display = 'flex';
+            groupNameInput.value = '';
+            groupNameInput.focus();
+        });
+    }
+    if (cancelGroupBtn) {
+        cancelGroupBtn.addEventListener('click', () => {
+            groupCreationForm.style.display = 'none';
+            createGroupModalBtn.style.display = 'flex';
+        });
+    }
+    if (submitGroupBtn) {
+        submitGroupBtn.addEventListener('click', async () => {
+            const groupName = groupNameInput.value.trim();
+            if (groupName === '') return;
+            const bodyData = {action: "create", ownerId: CURRENT_USER_ID, name: groupName};
+            try {
+                const response = await fetch(`${API_BASE_URL}/group`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyData)
+                });
+                if (response.ok) {
+                    alert(`Group "${groupName}" created successfully!`);
+                    groupCreationForm.style.display = 'none';
+                    createGroupModalBtn.style.display = 'flex';
+                    contactsModal.classList.remove('active');
+                    await loadChatrooms();
+                } else {
+                    console.error('Failed to create group.');
+                }
+            } catch (error) {
+                console.error('Error creating group:', error);
+            }
+        });
+    }
+
+    // =============( Fetch Contacts )=============
+    async function fetchContacts() {
+        modalContactsList.innerHTML = '<div class="modal-loading"><i class="fas fa-spinner fa-spin"></i> Loading contacts...</div>';
+        try {
+            const response = await fetch(`${API_BASE_URL}/contacts?userId=${CURRENT_USER_ID}`);
+            if (!response.ok) throw new Error('Failed to fetch contacts');
+            
+            const contacts = await response.json();
+            modalContactsList.innerHTML = '';
+
+            if (contacts.length === 0) {
+                modalContactsList.innerHTML = '<div class="modal-loading">No contacts found.</div>';
+                return;
+            }
+
+            contacts.forEach(contact => {
+                const contactName = contact.userName || 'Unknown';
+                const contactId = contact.userId;
+                const firstLetter = contactName.trim().charAt(0).toUpperCase();
+                
+                const item = document.createElement('div');
+                item.className = 'modal-contact-item';
+                item.innerHTML = `
+                    <div class="modal-contact-avatar">${firstLetter}</div>
+                    <div class="modal-contact-info">
+                        <span class="modal-contact-name">${contactName}</span>
+                        <span class="modal-contact-id">ID: ${contactId}</span>
+                    </div>
+                `;
+                
+                item.addEventListener('click', async () => {
+                    activeChat.type = 'pv';
+                    activeChat.targetId = contactId;
+                    currentRoomName.textContent = contactName;
+                    currentRoomAvatar.textContent = firstLetter;
+                    contactsModal.classList.remove('active');
+                    await loadMessages();
+                    if (appContainer) appContainer.classList.add('chat-open');
+                });
+                
+                modalContactsList.appendChild(item);
+            });
+        } catch (error) {
+            console.error('Error getting contacts:', error);
+            modalContactsList.innerHTML = '<div class="modal-loading" style="color:#ef4444;">Error loading contacts!</div>';
+        }
+    }
+
+    // =============( Update Messages )=============
     function setupAutoUpdate() {
         if (updateIntervalId) clearInterval(updateIntervalId);
         updateIntervalId = setInterval(loadMessages, 2000);
     }
 
     // =============( Initialize App )=============
-    initUserApp();
+    LoadChatrooms();
 });

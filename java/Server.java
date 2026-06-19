@@ -254,7 +254,8 @@ public class Server {
                 List<String> contactIds = infoRepo.getContactsId();
                 StringBuilder jsonBuilder = new StringBuilder("[");
                 for (int i = 0; i < contactIds.size(); i++) {
-                    jsonBuilder.append("\"").append(contactIds.get(i)).append("\"");
+                    User target = userRepo.findUser(new User(contactIds.get(i) , "" , "" , true));
+                    jsonBuilder.append(String.format("{\"userId\":\"%s\",\n\"userName\":\"%s\"}", contactIds.get(i), target.getUserName() ));
                     if (i < contactIds.size() - 1) jsonBuilder.append(",");
                 }
                 jsonBuilder.append("]");

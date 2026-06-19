@@ -20,6 +20,9 @@
             </div>
 
             <div class="chatroom-list"></div> <!-- Designed in JavaScript -->
+            <button class="fab-add-btn" id="openContactsBtn">
+                <i class="fas fa-plus"></i>
+            </button>
         </aside>
 
         <main class="chat-area">
@@ -29,7 +32,7 @@
                         <i class="fas fa-arrow-left"></i>
                     </button>
                     
-                    <div class="room-avatar header-avatar">photo</div>
+                    <div class="room-avatar header-avatar">⚠</div>
                     <div class="room-status">
                         <h3 class="current-room-name">No Chats Yet</h3>
                         <span class="last-online"></span>
@@ -54,6 +57,34 @@
             </footer>
         </main>
     </div>
+
+    <div class="modal-overlay" id="contactsModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 id="modalTitle">Start New Chat</h3>
+                <button class="modal-close-btn" id="closeContactsBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-group-section">
+                <button class="modal-create-group-btn" id="createGroupModalBtn">
+                    <i class="fas fa-users"></i> Create New Group
+                </button>
+                <div class="group-creation-form" id="groupCreationForm">
+                    <input type="text" id="groupNameInput" placeholder="Enter Group Name...">
+                    <div class="form-actions">
+                        <button id="submitGroupBtn" class="btn-confirm">Confirm</button>
+                        <button id="cancelGroupBtn" class="btn-cancel">Cancel</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-divider"></div>
+            <div class="modal-contacts-list" id="modalContactsList">
+                </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
