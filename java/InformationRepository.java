@@ -107,7 +107,8 @@ public class InformationRepository
 
     public void saveContact(User contact)
     {
-        try(FileWriter writer = new FileWriter(contactsPath , true))
+        File file = new File(userDirectory, contactsPath);
+        try(FileWriter writer = new FileWriter(file , true))
         {
             writer.write(contact.getId()+"\n");
         }
@@ -169,8 +170,8 @@ public class InformationRepository
     public int getHowManyGroupCreated()
     {
         int howManyGroupsCreate = -1;
-
-        try(BufferedReader reader = new BufferedReader(new FileReader(bioPath)))
+        File file = new File(userDirectory, bioPath);
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
             String line = reader.readLine();
             howManyGroupsCreate = Integer.parseInt(line);
@@ -187,8 +188,8 @@ public class InformationRepository
     {
         int counter = 0;
         String bio = null;
-
-        try(BufferedReader reader = new BufferedReader(new FileReader(bioPath)))
+        File file = new File(userDirectory, bioPath);
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
             String line;
 
@@ -216,7 +217,8 @@ public class InformationRepository
     public List<String> getContactsId()
     {
         List<String> ids = new ArrayList<>();
-        try(BufferedReader reader = new BufferedReader(new FileReader(contactsPath)))
+        File file = new File(userDirectory, contactsPath);
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
             String line;
 
@@ -262,7 +264,8 @@ public class InformationRepository
             }
         }
 
-        try(FileWriter writer = new FileWriter(pvPath , false))
+        File file = new File(userDirectory, pvPath);
+        try(FileWriter writer = new FileWriter(file , false))
         {
             for(String v : ids)
             {
@@ -289,7 +292,8 @@ public class InformationRepository
             }
         }
 
-        try(FileWriter writer = new FileWriter(groupsPath , false))
+        File file = new File(userDirectory, groupsPath);
+        try(FileWriter writer = new FileWriter(file , false))
         {
             for(String v : ids)
             {
@@ -316,7 +320,8 @@ public class InformationRepository
             }
         }
 
-        try(FileWriter writer = new FileWriter(contactsPath , false))
+        File file = new File(userDirectory, contactsPath);
+        try(FileWriter writer = new FileWriter(file , false))
         {
             for(String v : ids)
             {

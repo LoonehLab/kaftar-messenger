@@ -229,11 +229,81 @@ public class Server {
                     for (User u : safeMembers) {
                         targetGroup.leftOrRemove(u);
                     }
-                    // activeGroups.remove(targetGroup);
-                    //IMPORTANTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+                    targetGroup.deleteGroupForAll();
                     sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Group deleted for all\"}");
                 } 
                 else sendResponse(exchange, 404, "{\"error\":\"Group not found\"}");
+            }
+        });
+
+        // =========( Contacts Management )=========
+        server.createContext("/api/contacts", exchange -> {
+            handleCORS(exchange);
+            if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) return;
+            if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String query = exchange.getRequestURI().getQuery();
+                String userId = "";
+                if (query != null && query.contains("userId="))
+                    userId = query.split("userId=")[1].split("&")[0];
+                User user = userRepo.findUserById(userId);
+                if (userId.isEmpty() || user == null) {
+                    sendResponse(exchange, 400, "{\"error\":\"User not found\"}");
+                    return;
+                }
+                InformationRepository infoRepo = user.getInformationRepository();
+                List<String> contactIds = infoRepo.getContactsId();
+                StringBuilder jsonBuilder = new StringBuilder("[");
+                for (int i = 0; i < contactIds.size(); i++) {
+                    jsonBuilder.append("\"").append(contactIds.get(i)).append("\"");
+                    if (i < contactIds.size() - 1) jsonBuilder.append(",");
+                }
+                jsonBuilder.append("]");
+                sendResponse(exchange, 200, jsonBuilder.toString());
+            } 
+            
+            else if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String body = getRequestBody(exchange);
+                String action = extractJsonValue(body, "action");
+                String userId = extractJsonValue(body, "userId");
+                String contactId = extractJsonValue(body, "contactId");
+                if (userId.isEmpty() || contactId.isEmpty() || action.isEmpty()) {
+                    sendResponse(exchange, 400, "{\"error\":\"Missing fields\"}");
+                    return;
+                }
+                User user = userRepo.findUserById(userId);
+                User contact = userRepo.findUserById(contactId);
+                if (user == null || contact == null) {
+                    sendResponse(exchange, 404, "{\"error\":\"User or Contact not found\"}");
+                    return;
+                }
+                InformationRepository infoRepo = user.getInformationRepository();
+                if ("add".equalsIgnoreCase(action)) {
+                    if (infoRepo.getContactsId().contains(contactId)) {
+                        sendResponse(exchange, 400, "{\"error\":\"Contact already exists\"}");
+                        return;
+                    }
+                    infoRepo.saveContact(contact);
+                    if (!user.getContacts().contains(contact)) user.getContacts().add(contact);
+                    sendResponse(exchange, 200, "{\"message\":\"Contact added successfully\"}");
+                } 
+                
+                else if ("remove".equalsIgnoreCase(action)) {
+                    infoRepo.removeContact(contact);
+                    for (User usr : user.getContacts())
+                        if (usr.getId().equals(contactId)) {
+                            user.getContacts().remove(usr);
+                            break;
+                        }
+                    sendResponse(exchange, 200, "{\"message\":\"Contact removed successfully\"}");
+                } 
+                
+                else {
+                    sendResponse(exchange, 400, "{\"error\":\"Invalid action\"}");
+                }
+            } 
+            
+            else {
+                sendResponse(exchange, 405, "{\"error\":\"Method not allowed\"}");
             }
         });
 
