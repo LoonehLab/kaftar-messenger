@@ -8,6 +8,7 @@ import java.util.*;
 public class GroupRepository
 {
     private String directoryPath;
+    private File folder;
     private String memberPath;
     private String messagePath;
     private String dataPath;
@@ -18,7 +19,7 @@ public class GroupRepository
         this.group = group;
         directoryPath = ".." + File.separator + "data" + File.separator + "groups" + File.separator + group.getId();
         
-        File folder = new File(directoryPath);
+        folder = new File(directoryPath);
         if(!folder.exists())
         {
            folder.mkdirs();
@@ -214,5 +215,33 @@ public class GroupRepository
                 }
             }
         }
+    }
+
+    public void deleteGroupMessages()
+    {
+        try(FileWriter writer = new FileWriter(messagePath , false))
+        {
+            writer.write("");
+        }
+
+        catch(IOException e) 
+        {
+           e.printStackTrace();
+        } 
+    }
+
+    public void deleteGroup()
+    {
+        File[] files = folder.listFiles();
+
+        if(files != null)
+        {
+            for(File f : files)
+            {
+                f.delete();
+            }
+        }
+
+        folder.delete();
     }
 }

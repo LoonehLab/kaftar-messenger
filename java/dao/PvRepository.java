@@ -9,6 +9,7 @@ public class PvRepository
 {
     private String filePath;
     private PV pv;
+    private File file;
 
     public PvRepository(PV pv)
     {
@@ -21,7 +22,7 @@ public class PvRepository
         }
 
         String fileName = pv.getFirstPerson().getId() + pv.getSecondPerson().getId() + ".txt";
-        File file = new File(folder, fileName);
+        file = new File(folder, fileName);
 
         if (!file.exists()) 
         {
@@ -51,8 +52,7 @@ public class PvRepository
         filePath = file.getAbsolutePath();
     }
 
-    //fekr konam file kolan pak she behtare
-    public void deletPv()
+    public void deletPvMessages()
     {
         try(FileWriter writer = new FileWriter(filePath , false))
         {
@@ -63,6 +63,19 @@ public class PvRepository
         {
            e.printStackTrace();
         } 
+    }
+
+    public boolean deletePv()
+    {
+        if(file.delete())
+        {
+            return true;
+        }
+
+        else
+        {
+            return false;
+        }
     }
 
     public void addMessage(Message message) {
