@@ -28,9 +28,8 @@ public class User
     private InformationRepository informationRepository;
 
     public User(String userName, String fullName, String password) {
-        long timestamp = (System.currentTimeMillis() % 100000000L); // 8 Digits by time
-        int randomSuffix = new java.util.Random().nextInt(90) + 10; // 2 Random digits
-        this.id = String.valueOf(timestamp) + randomSuffix;
+        int randomSuffix = new java.util.Random().nextInt(9) + 1; // Random digits
+        this.id = String.valueOf(System.currentTimeMillis()) + randomSuffix;
         this.userName = userName;
         this.fullName = fullName;
         this.password = password;
