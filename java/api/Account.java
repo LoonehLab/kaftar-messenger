@@ -19,25 +19,38 @@ public class Account {
             if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) return;
             if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
                 String body = Core.getRequestBody(exchange);
-                String id = Core.extractJsonValue(body, "id"); //Temp
-                String user = Core.extractJsonValue(body, "user");
+                String id = Core.extractJsonValue(body, "id"); 
+                String user = Core.extractJsonValue(body, "user"); 
+                String fullName = Core.extractJsonValue(body, "fullName");
                 String pass = Core.extractJsonValue(body, "pass");
-                pass = PasswordHasher.hashPassword(pass);
-                if (id.isEmpty() || user.isEmpty() || pass.isEmpty()) {
-                    Core.sendResponse(exchange, 400, "{\"error\":\"Missing fields\"}");
-                    return;
+
+                User existingUser = null;
+                if (!id.isEmpty() && userRepo.isExists(id)) {
+                    existingUser = userRepo.findUserById(id);
+                } else if (!user.isEmpty() || !fullName.isEmpty()) {
+                    existingUser = userRepo.findUserByAnyField(user, fullName);
                 }
-                if (userRepo.isExists(id)) { //Login
-                    User temp = new User(id, user, pass, true);
-                    User existingUser = userRepo.findUser(temp);
-                    if (existingUser != null && existingUser.getPassword().equals(pass))
-                        Core.sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Login successful\"}");
-                    else Core.sendResponse(exchange, 401, "{\"error\":\"Wrong password\"}");
+
+                if (existingUser != null) { // Login
+                    String hashedPass = PasswordHasher.hashPassword(pass);
+                    if (existingUser.getPassword().equals(hashedPass))
+                        Core.sendResponse(exchange, 200, String.format("{\"status\":\"success\",\"message\":\"Login successful\",\"id\":\"%s\"}", existingUser.getId()));
+                    else 
+                        Core.sendResponse(exchange, 401, "{\"error\":\"Wrong password\"}");
                 }
-                else { //SignUp
-                    User newUser = new User(id, user, pass, true);
+                else { // SignUp
+                    if (user.isEmpty() || fullName.isEmpty() || pass.isEmpty()) {
+                        Core.sendResponse(exchange, 400, "{\"error\":\"Missing fields\"}");
+                        return;
+                    }
+                    if (!validatePassword(pass, user)) {
+                        Core.sendResponse(exchange, 400, "{\"error\":\"Invalid password policy\"}");
+                        return;
+                    }
+                    String hashedPass = PasswordHasher.hashPassword(pass);
+                    User newUser = new User(user, fullName, hashedPass);
                     userRepo.save(newUser);
-                    Core.sendResponse(exchange, 201, "{\"status\":\"created\",\"message\":\"User registered successfully\"}");
+                    Core.sendResponse(exchange, 201, String.format("{\"status\":\"created\",\"message\":\"User registered successfully\",\"id\":\"%s\"}", newUser.getId()));
                 }
             }
             else Core.sendResponse(exchange, 405, "Method Not Allowed");
@@ -51,7 +64,7 @@ public class Account {
             if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
                 String query = exchange.getRequestURI().getQuery();
                 String userId = query != null && query.contains("userId=") ? query.split("userId=")[1] : "";
-                User currentUser = userRepo.findUser(new User(userId, "", "", true));
+                User currentUser = userRepo.findUserById(userId);
                 if (currentUser == null) {
                     Core.sendResponse(exchange, 404, "{\"error\":\"User not found\"}");
                     return;
@@ -67,7 +80,7 @@ public class Account {
                 List<String> pvIds = currentUser.getInformationRepository().getPvIds();
                 for(int i=0 ; i<pvIds.size() ; i++) {
                     String targetId = pvIds.get(i);
-                    User target = userRepo.findUser(new User(targetId , "" , "" , true));
+                    User target = userRepo.findUserById(targetId);
                     if(target == null) continue;
                     json.append(String.format( "{\"targetId\":\"%s\",\"targetName\":\"%s\"}", target.getId(), target.getUserName()));
                     if(i < pvIds.size()-1) json.append(",");
@@ -122,5 +135,11 @@ public class Account {
             }
             else Core.sendResponse(exchange, 405, "Method Not Allowed");
         });
+    }
+  
+    private static boolean validatePassword(String password, String username) {
+        if (password.length() < 8 || password.contains(username)) return false;
+        String pattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!$#@%&^*]).+$";
+        return java.util.regex.Pattern.matches(pattern, password);
     }
 }

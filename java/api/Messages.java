@@ -22,8 +22,8 @@ public class Messages {
             if ("pv".equalsIgnoreCase(chatType)) {
                 String u1 = Core.extractJsonValue(body, "user1");
                 String u2 = Core.extractJsonValue(body, "user2");
-                User user1 = userRepo.findUser(new User(u1, "", "", true));
-                User user2 = userRepo.findUser(new User(u2, "", "", true));
+                User user1 = userRepo.findUserById(u1);
+                User user2 = userRepo.findUserById(u2);
                 if (user1 != null && user2 != null) {
                     PV pv = Core.findOrCreatePV(user1, user2);
                     targetChat = pv;

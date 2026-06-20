@@ -28,7 +28,7 @@ public class Contacts {
                 List<String> contactIds = infoRepo.getContactsId();
                 StringBuilder jsonBuilder = new StringBuilder("[");
                 for (int i = 0; i < contactIds.size(); i++) {
-                    User target = userRepo.findUser(new User(contactIds.get(i) , "" , "" , true));
+                    User target = userRepo.findUserById(contactIds.get(i));
                     jsonBuilder.append(String.format("{\"userId\":\"%s\",\n\"userName\":\"%s\"}", contactIds.get(i), target.getUserName() ));
                     if (i < contactIds.size() - 1) jsonBuilder.append(",");
                 }

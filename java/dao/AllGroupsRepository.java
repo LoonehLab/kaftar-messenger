@@ -60,8 +60,7 @@ public class AllGroupsRepository
                 String[] data = line.split(" , ");
                 if(data[0].equals(groupId))
                 {
-                    User tempUser = new User(data[2],"","",true);
-                    User owner = UserRepository.getInstance().findUser(tempUser);
+                    User owner = UserRepository.getInstance().findUserById(data[2]);
                     if(owner == null)return null;
                     return new Group(owner, data[1], owner);
                 }
@@ -85,8 +84,7 @@ public class AllGroupsRepository
             while((line = reader.readLine()) != null)
             {
                 String[] data = line.split(" , ");
-                User tempUser = new User(data[2],"","",true);
-                User owner = UserRepository.getInstance().findUser(tempUser);
+                User owner = UserRepository.getInstance().findUserById(data[2]);
                 if(owner != null)
                     groups.add(new Group(owner,data[1],owner));
             }

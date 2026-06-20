@@ -24,8 +24,8 @@ public class Chatroom {
                 String senderId = Core.extractJsonValue(body, "senderId");
                 String receiverId = Core.extractJsonValue(body, "receiverId");
                 String text = Core.extractJsonValue(body, "text");
-                User sender = userRepo.findUser(new User(senderId, "", "", true));
-                User receiver = userRepo.findUser(new User(receiverId, "", "", true));
+                User sender = userRepo.findUserById(senderId);
+                User receiver = userRepo.findUserById(receiverId);
                 if (sender == null || receiver == null) {
                     Core.sendResponse(exchange, 404, "{\"error\":\"Sender or Receiver not found\"}");
                     return;
@@ -40,8 +40,8 @@ public class Chatroom {
                 String query = exchange.getRequestURI().getQuery();
                 String user1 = query != null && query.contains("user1=") ? query.split("user1=")[1].split("&")[0] : "";
                 String user2 = query != null && query.contains("user2=") ? query.split("user2=")[1] : "";
-                User u1 = userRepo.findUser(new User(user1, "", "", true));
-                User u2 = userRepo.findUser(new User(user2, "", "", true));
+                User u1 = userRepo.findUserById(user1);
+                User u2 = userRepo.findUserById(user2);
                 if (u1 == null || u2 == null) {
                     Core.sendResponse(exchange, 404, "{\"error\":\"Users not found\"}");
                     return;
@@ -54,8 +54,8 @@ public class Chatroom {
                 String body = Core.getRequestBody(exchange);
                 String u1 = Core.extractJsonValue(body, "user1");
                 String u2 = Core.extractJsonValue(body, "user2");
-                User user1 = userRepo.findUser(new User(u1, "", "", true));
-                User user2 = userRepo.findUser(new User(u2, "", "", true));
+                User user1 = userRepo.findUserById(u1);
+                User user2 = userRepo.findUserById(u2);
                 if (user1 == null || user2 == null) {
                     Core.sendResponse(exchange, 404, "{\"error\":\"Users not found\"}");
                     return;
@@ -80,7 +80,7 @@ public class Chatroom {
                 if ("create".equalsIgnoreCase(action)) { // Create Group
                     String ownerId = Core.extractJsonValue(body, "ownerId");
                     String groupName = Core.extractJsonValue(body, "name");
-                    User owner = userRepo.findUser(new User(ownerId, "", "", true));
+                    User owner = userRepo.findUserById(ownerId);
                     if (owner == null) {
                         Core.sendResponse(exchange, 404, "{\"error\":\"Owner not found\"}");
                         return;
@@ -109,7 +109,7 @@ public class Chatroom {
                     String groupId = Core.extractJsonValue(body, "groupId");
                     String memberId = Core.extractJsonValue(body, "memberId");
                     Group targetGroup = Core.findGroupById(groupId);
-                    User newMem = userRepo.findUser(new User(memberId, "", "", true));
+                    User newMem = userRepo.findUserById(memberId);
                     if (targetGroup != null && newMem != null) {
                         targetGroup.addMember(newMem);
                         newMem.getInformationRepository().saveGroup(targetGroup);
@@ -123,7 +123,7 @@ public class Chatroom {
                     String groupId = Core.extractJsonValue(body, "groupId");
                     String memberId = Core.extractJsonValue(body, "memberId");
                     Group targetGroup = Core.findGroupById(groupId);
-                    User mem = userRepo.findUser(new User(memberId, "", "", true));
+                    User mem = userRepo.findUserById(memberId);
                     if (targetGroup != null && mem != null) {
                         targetGroup.leftOrRemove(mem);
                         Core.sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Member removed successfully\"}");

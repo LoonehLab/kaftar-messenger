@@ -23,11 +23,11 @@
             </p>
             
             <div class="auth-buttons">
-                <a href="#" class="btn btn-login">
+                <a href="#" class="btn btn-login" id="openLoginModal">
                     <span>Login</span>
                     <i class="fas fa-sign-in-alt"></i>
                 </a>
-                <a href="#" class="btn btn-signup">
+                <a href="#" class="btn btn-signup" id="openSignupModal">
                     <span>Sign Up</span>
                     <i class="fas fa-user-plus"></i>
                 </a>
@@ -43,5 +43,79 @@
             </div>
         </section>
     </main>
+
+    
+    <div class="auth-modal-overlay" id="authModal">
+    <div class="auth-modal-box">
+
+        <button class="auth-modal-close" id="closeAuthModal">
+            <i class="fas fa-times"></i>
+        </button>
+
+        
+    <form class="auth-form active" id="loginForm">
+    <h2>Login</h2>
+    <p>Login to your account</p>
+
+    <div class="auth-input-group">
+        <i class="fas fa-id-card"></i>
+        <input type="text" id="loginUserId" placeholder="User ID">
+    </div>
+
+    <div class="auth-input-group">
+        <i class="fas fa-lock"></i>
+        <input type="password" id="loginPassword" placeholder="Password">
+    </div>
+
+    <button type="submit" class="auth-submit-btn">Login</button>
+
+    <span class="switch-auth-text">
+        Don't have an account?
+        <button type="button" id="switchToSignup">Sign Up</button>
+    </span>
+    </form>
+
+
+        <!-- Sign Up Form -->
+    <form class="auth-form" id="signupForm">
+    <h2>Sign Up</h2>
+    <p>Create your account</p>
+
+    <div class="auth-input-group">
+        <i class="fas fa-user"></i>
+        <input type="text" id="signupFullname" placeholder="Full Name">
+    </div>
+
+    <div class="auth-input-group">
+        <i class="fas fa-id-card"></i>
+        <input type="text" id="signupUserId" placeholder="User ID">
+    </div>
+
+    <div class="auth-input-group">
+        <i class="fas fa-lock"></i>
+        <input type="password" id="signupPassword" placeholder="Password">
+    </div>
+
+    <div class="auth-input-group">
+        <i class="fas fa-lock"></i>
+        <input type="password" id="signupRepeatPassword" placeholder="Repeat Password">
+    </div>
+
+    <button type="submit" class="auth-submit-btn">
+        Create Account
+    </button>
+
+    <span class="switch-auth-text">
+        Already have an account?
+        <button type="button" id="switchToLogin">Login</button>
+    </span>
+    </form>
+
+
+    </div>
+</div>
+
+<script src="welcome.js"></script>
+
 </body>
 </html>
