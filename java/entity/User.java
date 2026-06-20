@@ -8,6 +8,7 @@ public class User
 {
     private String userName;
     private String id;
+    private String fullName;
     private String password;
     private String bio;
     private String phoneNumber;
@@ -26,25 +27,34 @@ public class User
 
     private InformationRepository informationRepository;
 
+    public User(String userName, String fullName, String password) {
+        long timestamp = (System.currentTimeMillis() % 100000000L); // 8 Digits by time
+        int randomSuffix = new java.util.Random().nextInt(90) + 10; // 2 Random digits
+        this.id = String.valueOf(timestamp) + randomSuffix;
+        this.userName = userName;
+        this.fullName = fullName;
+        this.password = password;
+        initFields(false);
+    }
 
-    public User(String id , String userName , String password, boolean loadMode)
-    {
+    public User(String id, String userName, String fullName, String password, boolean loadMode) {
         this.id = id;
         this.userName = userName;
+        this.fullName = fullName;
         this.password = password;
+        initFields(loadMode);
+    }
+
+    private void initFields(boolean loadMode) {
         bio = "";
         phoneNumber = "";
-
         pv = new ArrayList<>();
         groups = new ArrayList<>();
         sentMessages = new ArrayList<>();
         receivedMessages = new ArrayList<>();
         contacts = new ArrayList<>();
-
         messageOfSavedMessage = new ArrayList<>();
-
         howManyGroupsCreate = 0;
-        
         if(!loadMode) informationRepository = new InformationRepository(this);
     }
 
@@ -130,6 +140,7 @@ public class User
 
     public String getUserName(){ return userName;}
     public String getId(){ return id;}
+    public String getFullName() { return fullName; }
     public String getPassword(){ return password;}
     public String getBio(){ return bio;}
     public String getPhoneNumber(){ return phoneNumber;}
@@ -146,6 +157,7 @@ public class User
 
     public void setUserName(String userName){ this.userName = userName; }
     public void setId(String id){ this.id = id; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
     public void setPassword(String password){ this.password = password; }
     public void setBio(String bio){ this.bio = bio; }
     public void setPhoneNumber(String phoneNumber){ this.phoneNumber = phoneNumber; }

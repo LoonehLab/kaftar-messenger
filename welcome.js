@@ -2,7 +2,6 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("welcome.js loaded");
 
     const modal = document.getElementById("authModal");
-
     const openLoginModal = document.getElementById("openLoginModal");
     const openSignupModal = document.getElementById("openSignupModal");
     const closeAuthModal = document.getElementById("closeAuthModal");
@@ -13,16 +12,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const switchToSignup = document.getElementById("switchToSignup");
     const switchToLogin = document.getElementById("switchToLogin");
 
-    if (
-        !modal ||
-        !openLoginModal ||
-        !openSignupModal ||
-        !closeAuthModal ||
-        !loginForm ||
-        !signupForm ||
-        !switchToSignup ||
-        !switchToLogin
-    ) {
+    const API_BASE_URL = 'http://localhost:8081/api';
+
+    if (!modal || !openLoginModal || !openSignupModal || !closeAuthModal || !loginForm || !signupForm || !switchToSignup || !switchToLogin) {
         console.error("Some modal elements were not found.");
         return;
     }
@@ -54,9 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     closeAuthModal.addEventListener("click", closeModal);
-
     switchToSignup.addEventListener("click", showSignup);
-
     switchToLogin.addEventListener("click", showLogin);
 
     modal.addEventListener("click", (event) => {
@@ -65,36 +55,84 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    loginForm.addEventListener("submit", (event) => {
+    loginForm.addEventListener("submit", async (event) => {
         event.preventDefault();
 
-        const username = document.getElementById("loginUsername").value.trim();
+        const username = document.getElementById("loginUserId").value.trim();
         const password = document.getElementById("loginPassword").value.trim();
 
         if (!username || !password) {
-            alert("Please enter username and password.");
+            alert("Please fill in all fields.");
             return;
         }
 
-        console.log("Login:", username, password);
+        try {
+            const response = await fetch(`${API_BASE_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: "",        
+                    user: username,
+                    fullName: username,
+                    pass: password
+                })
+            });
 
-        window.location.href = "chat.html";
+            const data = await response.json();
+
+            if (response.status === 200) {
+                localStorage.setItem("CURRENT_USER_ID", data.id);
+                window.location.href = "chat.html";
+            } else {
+                alert(data.error || "Login failed");
+            }
+        } catch (error) {
+            console.error("Error during login:", error);
+            alert("Could not connect to server.");
+        }
     });
 
-    signupForm.addEventListener("submit", (event) => {
+    signupForm.addEventListener("submit", async (event) => {
         event.preventDefault();
 
-        const username = document.getElementById("signupUsername").value.trim();
+        const fullname = document.getElementById("signupFullname").value.trim();
+        const username = document.getElementById("signupUserId").value.trim();
         const password = document.getElementById("signupPassword").value.trim();
+        const repeatPassword = document.getElementById("signupRepeatPassword").value.trim();
 
-        if (!username || !password) {
-            alert("Please enter username and password.");
+        if (!fullname || !username || !password || !repeatPassword) {
+            alert("Please fill in all fields.");
             return;
         }
 
-        console.log("Signup:", username, password);
+        if (password !== repeatPassword) {
+            alert("Passwords do not match!");
+            return;
+        }
 
-        window.location.href = "chat.html";
+        try {
+            const response = await fetch(`${API_BASE_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: "", 
+                    user: username,
+                    fullName: fullname,
+                    pass: password
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.status === 201) {
+                localStorage.setItem("CURRENT_USER_ID", data.id);
+                window.location.href = "chat.html";
+            } else {
+                alert(data.error || "Sign up failed");
+                console.error(data.error || "Sign up failed");
+            }
+        } catch (error) {
+            console.error("Error during sign up:", error);
+        }
     });
 });
-

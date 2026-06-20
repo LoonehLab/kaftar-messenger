@@ -9,13 +9,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const API_BASE_URL = 'http://localhost:8081/api';
     
-    // Getting user ID (Temperory)
-    let CURRENT_USER_ID = prompt("Enter User ID:") || "123";
-    
-    let activeChat = {
-        type: null,     // 'pv' یا 'group'
-        targetId: null  // آیدی مخاطب یا آیدی گروه
-    };
+    let CURRENT_USER_ID = localStorage.getItem("CURRENT_USER_ID");
+    if (!CURRENT_USER_ID) {
+        alert("You must login first!");
+        window.location.href = "index.html";
+        return;
+    }
+    let activeChat = {type: null, targetId: null};
     
     let updateIntervalId = null;
 

@@ -37,7 +37,7 @@ public class UserRepository
    {
       try(FileWriter writer = new FileWriter(filePath , true))
       {
-         writer.write(user.getId()+" , "+user.getUserName()+" , "+user.getPassword()+"\n");
+         writer.write(user.getId()+" , "+user.getUserName()+" , "+user.getFullName()+" , "+user.getPassword()+"\n");
       }
 
       catch(IOException e)  
@@ -57,10 +57,10 @@ public class UserRepository
          while ((line = reader.readLine()) != null) 
          {
             String[] userData = line.split(" , ");
-            
-            User newUser = new User(userData[0], userData[1], userData[2], true);
-
-            users.add(newUser);
+            if (userData.length >= 4) {
+                  User newUser = new User(userData[0], userData[1], userData[2], userData[3], true);
+                  users.add(newUser);
+            }
          }
       }
 
@@ -87,21 +87,6 @@ public class UserRepository
       return false;
    }
 
-   public User findUser(User user)
-   {
-      List<User> users = makeArrayOfAllUsers();
-
-      for(int i=0 ; i<users.size() ; i++)
-      {
-         if((users.get(i).getId()).equals(user.getId()))
-         {
-            return users.get(i);
-         }
-      }
-
-      return null;
-   }
-
    public User findUserById(String id)
    {
       List<User> users = makeArrayOfAllUsers();
@@ -120,5 +105,13 @@ public class UserRepository
    public List<User> getAllUsers()
    {
       return makeArrayOfAllUsers();
+   }
+
+   public User findUserByAnyField(String username, String fullName) {
+      for(User u : makeArrayOfAllUsers()) {
+         if (!username.isEmpty() && u.getUserName().equalsIgnoreCase(username)) return u;
+         if (!fullName.isEmpty() && u.getFullName().equalsIgnoreCase(fullName)) return u;
+      }
+      return null;
    }
 }

@@ -338,31 +338,4 @@ public class InformationRepository
             e.printStackTrace();
         }
     }
-
-    /*public Group findGroup(String groupId)
-    {
-        try(BufferedReader reader = new BufferedReader(new FileReader(allGroupsPath)))
-        {
-            String line;
-            while((line = reader.readLine()) != null)
-            {
-                String[] data = line.split(" , ");
-                if(line.equals(groupId))
-                {
-                    User tempUser = new User(data[2], "" ,"", true);
-                    User owner = UserRepository.getInstance().findUser(tempUser);
-                    if(owner == null) return null;
-                    return new Group(owner, data[1], owner);
-                }
-            }
-        }
-
-        catch(IOException e)
-        {
-            e.printStackTrace();
-        }
-
-        return null;
-    }*/
-
 }
