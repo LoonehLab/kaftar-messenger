@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatroomListContainer = document.querySelector('.chatroom-list');
     const currentRoomName = document.querySelector('.current-room-name');
     const currentRoomAvatar = document.querySelector('.header-avatar');
+    const sidebarSearch = document.getElementById('sidebarSearch');
     const sendBtn = document.querySelector('.outer-send-btn');
     const messageInput = document.querySelector('.input-container input');
     const messagesContainer = document.querySelector('.messages-container');
@@ -142,6 +143,58 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Error loading messages:', error);
         }
+    }
+
+    // =============( Live Search Chats )=============
+    sidebarSearch.addEventListener('input', async () => {
+        const searchInput = sidebarSearch.value.trim();
+        if (searchInput.length < 4) {
+            LoadChatrooms();
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/user/search?searchInput=${searchInput}`);
+            if (!response.ok) return;
+            const data = await response.json();
+            const searchResults = data.results;
+            chatroomListContainer.innerHTML = '';
+            if (searchResults.length === 0) {
+                chatroomListContainer.innerHTML = '<div style="padding:15px; text-align:center; opacity:0.6;">No users found</div>';
+                return;
+            }
+            searchResults.forEach(user => {
+                createSearchItemHTML(user.id, user.username);
+            });
+        } catch (error) {
+            console.error('Error during search:', error);
+        }
+    });
+
+    function createSearchItemHTML(id, name) {
+        const itemDiv = document.createElement('div');
+        itemDiv.classList.add('chatroom-item');
+        itemDiv.setAttribute('data-type', 'pv');
+        itemDiv.setAttribute('data-target-id', id);
+        itemDiv.innerHTML = `
+            <div class="room-info">
+                <div class="room-avatar">${getAvatarHTML(id, name)}</div>
+                <span class="room-name">${name}</span>
+            </div>
+        `;
+        itemDiv.addEventListener('click', () => {
+            sidebarSearch.value = '';
+            activeChat.type = 'pv';
+            activeChat.targetId = id;
+            currentRoomName.textContent = name;
+            currentRoomAvatar.innerHTML = getAvatarHTML(id, name);
+            if (appContainer) appContainer.classList.add('chat-open');
+            loadMessages();
+            setupAutoUpdate();
+            LoadChatrooms(); 
+        });
+
+        chatroomListContainer.appendChild(itemDiv);
     }
 
     // =============( Send Message )=============
