@@ -10,6 +10,7 @@ public class Server {
 
         Account.login(server);
         Account.load(server);
+        Account.search(server);
         Chatroom.loadPV(server);
         Chatroom.loadGroup(server);
         Contacts.Manage(server);

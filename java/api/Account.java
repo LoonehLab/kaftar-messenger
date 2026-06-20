@@ -93,4 +93,34 @@ public class Account {
             else Core.sendResponse(exchange, 405, "Method Not Allowed");
         });
     }
+
+    public static void search(HttpServer server) {
+        server.createContext("/api/user/search", exchange -> {
+            Core.handleCORS(exchange);
+            if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) return;
+            if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String query = exchange.getRequestURI().getQuery();
+                String searchInput = query != null && query.contains("searchInput=") ? query.split("searchInput=")[1] : "";
+                List<User> allUsers = userRepo.getAllUsers();
+                StringBuilder json = new StringBuilder();
+
+                json.append("{\"results\":[");
+                boolean first = true;
+                for(User usr : allUsers) {
+                    if (usr.getUserName().startsWith(searchInput)){
+                        if (!first) json.append(",");
+                        first = false;
+                        json.append("{");
+                        json.append("\"id\":\"").append(usr.getId()).append("\",");
+                        json.append("\"username\":\"").append(usr.getUserName()).append("\"");
+                        json.append("}");
+                    }
+                }
+                json.append("]}");
+                
+                Core.sendResponse(exchange, 200, json.toString());
+            }
+            else Core.sendResponse(exchange, 405, "Method Not Allowed");
+        });
+    }
 }
