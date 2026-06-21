@@ -10,6 +10,7 @@ public class Server {
 
         Account.login(server);
         Account.load(server);
+        Account.avatar(server);
         Account.search(server);
         Chatroom.loadPV(server);
         Chatroom.loadGroup(server);

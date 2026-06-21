@@ -85,6 +85,53 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="profileSettingsModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Profile Settings</h3>
+                <button class="modal-close-btn" id="closeProfileSettingsBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="profile-setup-container">
+                <div class="profile-avatar-wrapper">
+                    <div class="profile-modal-avatar" id="profileModalAvatar">?</div>
+                    <label for="avatarFileInput" class="avatar-upload-overlay" title="Change Avatar">
+                        <i class="fas fa-camera"></i>
+                    </label>
+                    <input type="file" id="avatarFileInput" accept="image/*" style="display: none;">
+                    <button class="avatar-delete-btn" id="deleteAvatarBtn" title="Delete Avatar">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+
+                <div class="profile-settings-form">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="settingsUsername" placeholder="Username..." readonly style="opacity: 0.6; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="settingsFullName" placeholder="Your Name...">
+                    </div>
+                    <div class="form-group">
+                        <label>Bio</label>
+                        <textarea id="settingsBio" placeholder="Tell us about yourself..." rows="2"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="text" id="settingsPhone" placeholder="+123456789...">
+                    </div>
+                    
+                    <button id="saveProfileBtn" class="btn-confirm profile-save-btn">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

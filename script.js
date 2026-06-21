@@ -4,6 +4,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentRoomAvatar = document.querySelector('.header-avatar');
     const sidebarSearch = document.getElementById('sidebarSearch');
     const sendBtn = document.querySelector('.outer-send-btn');
+
+    const mainUserAvatar = document.querySelector('.user-avatar.main-avatar');
+    const profileSettingsModal = document.getElementById('profileSettingsModal');
+    const closeProfileSettingsBtn = document.getElementById('closeProfileSettingsBtn');
+    const profileModalAvatar = document.getElementById('profileModalAvatar');
+    const avatarFileInput = document.getElementById('avatarFileInput');
+    const deleteAvatarBtn = document.getElementById('deleteAvatarBtn');
+    const settingsUsername = document.getElementById('settingsUsername');
+    const settingsFullName = document.getElementById('settingsFullName');
+    const settingsBio = document.getElementById('settingsBio');
+    const settingsPhone = document.getElementById('settingsPhone');
+    const saveProfileBtn = document.getElementById('saveProfileBtn');
+
     const messageInput = document.querySelector('.input-container input');
     const messagesContainer = document.querySelector('.messages-container');
     const appContainer = document.querySelector('.app-container');
@@ -29,13 +42,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =============( Profile Avatar )=============
-    function getAvatarHTML(id, name) {
+    function getAvatarHTML(name, base64Image) {
+        if (base64Image && base64Image.trim() !== "") {
+            return `<img src="${base64Image}" style="width:100%; height:100%; object-fit:cover;">`;
+        }
         const firstLetter = name ? name.trim().charAt(0).toUpperCase() : '?';
-        const avatarUrl = `assets/avatars/${id}.png`;
-        return `
-            <img src="${avatarUrl}" alt="${name}" onerror="this.style.display='none';">
-            <span>${firstLetter}</span>
-        `;
+        return firstLetter;
+    }
+
+    function updateMainUserAvatar(fullName, base64Image) {
+        let avatarHTML = getAvatarHTML(fullName, base64Image);
+        if (base64Image && base64Image.trim() !== "") {
+            avatarHTML = `<img src="${base64Image}" class="user-main-img" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+        }
+        if (mainUserAvatar) {
+            mainUserAvatar.innerHTML = avatarHTML;
+        }
+        if (profileModalAvatar) {
+            profileModalAvatar.innerHTML = avatarHTML;
+        }
     }
 
     // =============( User Data and Chats )=============
@@ -44,20 +69,35 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`${API_BASE_URL}/user/init?userId=${CURRENT_USER_ID}`);
             const userData = await res.json();
             console.log("User data loaded:", userData);
-            chatroomListContainer.innerHTML = ''; //Cleaning chatrooms
+            chatroomListContainer.innerHTML = '';
+            const myName = userData.fullName || userData.username || "Me";
+            const myAvatar = userData.avatar || userData.profilePicture || "";
+            updateMainUserAvatar(myName, myAvatar);
+            if (settingsUsername) settingsUsername.value = userData.username || CURRENT_USER_ID;
+            if (settingsFullName) settingsFullName.value = userData.fullName || "";
+            if (settingsBio) settingsBio.value = userData.bio || "";
+            if (settingsPhone) settingsPhone.value = userData.phone || "";
+
             userData.pvs.forEach(pv => {
-                createChatroomItemHTML(pv.targetId, pv.targetName, 'pv'); //Rendering PV's
+                createChatroomItemHTML(pv.targetId, pv.targetName, 'pv', pv.profilePicture || null); 
             });
+
             userData.groups.forEach(group => {
-                createChatroomItemHTML(group.groupId, group.groupName, 'group'); //Rendering groups
+                createChatroomItemHTML(group.groupId, group.groupName, 'group', null); 
             });
-            const firstChat = chatroomListContainer.querySelector('.chatroom-item'); //Rendering first
+            const firstChat = chatroomListContainer.querySelector('.chatroom-item'); 
             if (firstChat) {
                 firstChat.classList.add('active');
-                currentRoomName.textContent = firstChat.querySelector('.room-name').textContent;
+                const firstChatName = firstChat.querySelector('.room-name').textContent;
+                currentRoomName.textContent = firstChatName;
                 activeChat.type = firstChat.getAttribute('data-type');
                 activeChat.targetId = firstChat.getAttribute('data-target-id');
-                currentRoomAvatar.innerHTML = getAvatarHTML(activeChat.targetId, currentRoomName.textContent);
+                let firstChatAvatar = null;
+                if (activeChat.type === 'pv' && userData.pvs) {
+                    const foundPv = userData.pvs.find(p => p.targetId === activeChat.targetId);
+                    if (foundPv) firstChatAvatar = foundPv.profilePicture;
+                }
+                currentRoomAvatar.innerHTML = getAvatarHTML(firstChatName, firstChatAvatar);
                 loadMessages();
                 setupAutoUpdate();
             } else {
@@ -77,23 +117,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =============( Create Chatroom )=============
-    function createChatroomItemHTML(id, name, type) {
+    function createChatroomItemHTML(id, name, type, avatarBase64 = null) {
         const itemDiv = document.createElement('div');
         itemDiv.classList.add('chatroom-item');
         itemDiv.setAttribute('data-type', type);
         itemDiv.setAttribute('data-target-id', id);
         itemDiv.innerHTML = `
             <div class="room-info">
-                <div class="room-avatar">${getAvatarHTML(id, name)}</div>
+                <div class="room-avatar">${getAvatarHTML(name, avatarBase64)}</div>
                 <span class="room-name">${name}</span>
             </div>
             <i class="fas fa-ellipsis-v options-icon"></i>
         `;
-        itemDiv.addEventListener('click', () => { //Mobile Things
+        
+        itemDiv.addEventListener('click', () => { 
             document.querySelectorAll('.chatroom-item').forEach(i => i.classList.remove('active'));
             itemDiv.classList.add('active');
             currentRoomName.textContent = name;
-            currentRoomAvatar.innerHTML = getAvatarHTML(id, name);
+            currentRoomAvatar.innerHTML = getAvatarHTML(name, avatarBase64);
             appContainer.classList.add('chat-open');
             activeChat.type = type;
             activeChat.targetId = id;
@@ -164,21 +205,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             searchResults.forEach(user => {
-                createSearchItemHTML(user.id, user.username);
+                createSearchItemHTML(user.id, user.username, user.profilePicture || null);
             });
         } catch (error) {
             console.error('Error during search:', error);
         }
     });
 
-    function createSearchItemHTML(id, name) {
+    function createSearchItemHTML(id, name, avatarBase64 = null) {
         const itemDiv = document.createElement('div');
         itemDiv.classList.add('chatroom-item');
         itemDiv.setAttribute('data-type', 'pv');
         itemDiv.setAttribute('data-target-id', id);
         itemDiv.innerHTML = `
             <div class="room-info">
-                <div class="room-avatar">${getAvatarHTML(id, name)}</div>
+                <div class="room-avatar">${getAvatarHTML(name, avatarBase64)}</div>
                 <span class="room-name">${name}</span>
             </div>
         `;
@@ -187,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
             activeChat.type = 'pv';
             activeChat.targetId = id;
             currentRoomName.textContent = name;
-            currentRoomAvatar.innerHTML = getAvatarHTML(id, name);
+            currentRoomAvatar.innerHTML = getAvatarHTML(name, avatarBase64);
             if (appContainer) appContainer.classList.add('chat-open');
             loadMessages();
             setupAutoUpdate();
@@ -292,6 +333,111 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error('Error creating group:', error);
             }
+        });
+    }
+
+    // =============( Profile Settings Modal )=============
+    if (mainUserAvatar) {
+        mainUserAvatar.style.cursor = 'pointer';
+        mainUserAvatar.addEventListener('click', async () => {
+            if (profileSettingsModal) {
+                profileSettingsModal.classList.add('active');
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}/user/avatar?userId=${CURRENT_USER_ID}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const currentName = (settingsFullName && settingsFullName.value) ? settingsFullName.value : "Me";
+                    if (data.profilePicture && data.profilePicture.trim() !== "") {
+                        if (profileModalAvatar) {
+                            profileModalAvatar.innerHTML = `<img src="${data.profilePicture}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+                        }
+                    } else {
+                        if (profileModalAvatar) profileModalAvatar.innerHTML = getAvatarHTML(currentName, "");
+                    }
+                }
+            } catch (err) {
+                console.error("Error loading profile picture into modal:", err);
+            }
+        });
+    }
+
+    if (closeProfileSettingsBtn) {
+        closeProfileSettingsBtn.addEventListener('click', () => {
+            profileSettingsModal.classList.remove('active');
+        });
+    }
+
+    if (avatarFileInput) {
+        avatarFileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (!file) return;
+            if (file.size > 1024 * 1024) {
+                alert("Image is too large! Please select an image under 1MB.");
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64String = e.target.result;
+                const bodyData = {
+                    userId: CURRENT_USER_ID,
+                    profilePicture: base64String
+                };
+                try {
+                    const response = await fetch(`${API_BASE_URL}/user/avatar`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(bodyData)
+                    });
+                    if (response.ok) {
+                        alert('Avatar uploaded successfully!');
+                        const currentName = (settingsFullName && settingsFullName.value) ? settingsFullName.value : "Me";
+                        updateMainUserAvatar(currentName, base64String);
+                    } else {
+                        alert('Failed to upload avatar. Status: ' + response.status);
+                    }
+                } catch (error) {
+                    console.error('Error uploading avatar:', error);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    if (deleteAvatarBtn) {
+        deleteAvatarBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (!confirm("Are you sure you want to delete your profile picture?")) return;
+
+            const bodyData = {
+                userId: CURRENT_USER_ID,
+                profilePicture: ""
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/user/avatar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyData)
+                });
+
+                if (response.ok) {
+                    alert('Avatar deleted successfully!');
+                    const currentName = (settingsFullName && settingsFullName.value) ? settingsFullName.value : "Me";
+                    updateMainUserAvatar(currentName, "");
+                } else {
+                    alert('Failed to delete avatar.');
+                }
+            } catch (error) {
+                console.error('Error deleting avatar:', error);
+            }
+        });
+    }
+
+    if (saveProfileBtn) {
+        saveProfileBtn.addEventListener('click', () => {
+            alert('Other information saved locally! Global update API integration coming soon.');
+            if (profileSettingsModal) profileSettingsModal.classList.remove('active');
         });
     }
 

@@ -14,20 +14,12 @@ public class InformationRepository
 {
     private String userDirectory;
     //private String dataOfUserPath;
-    private String pvPath;
-    private String groupsPath;
-    private String bioPath;
-    private String contactsPath;
 
     private User user;
 
     public InformationRepository(User user)
     {
         userDirectory = ".." + File.separator + "data" + File.separator + "users" + File.separator + user.getId();
-        pvPath = user.getId() + "pv.txt";
-        groupsPath = user.getId() + "group.txt";
-        bioPath = user.getId() + "bio.txt";
-        contactsPath = user.getId() + "contact.txt";
         this.user = user;
         try
         {
@@ -36,22 +28,27 @@ public class InformationRepository
             {
             folder.mkdirs();
             }
-            File pvFile = new File(folder, pvPath);
+            File pvFile = new File(folder, "pv.txt");
             if(!pvFile.exists())
             {
             pvFile.createNewFile();
             }
-            File groupFile = new File(folder, groupsPath);
+            File groupFile = new File(folder, "group.txt");
             if(!groupFile.exists())
             {
             groupFile.createNewFile();
             }
-            File bioFile = new File(folder, bioPath);
+            File avatarFile = new File(folder, "avatar.txt");
+            if(!avatarFile.exists()) 
+            { 
+            avatarFile.createNewFile(); 
+            }
+            File bioFile = new File(folder, "bio.txt");
             if(!bioFile.exists())
             {
             bioFile.createNewFile();
             }
-            File contactFile = new File(folder, contactsPath);
+            File contactFile = new File(folder, "contact.txt");
             if(!contactFile.exists())
             {
             contactFile.createNewFile();
@@ -65,7 +62,7 @@ public class InformationRepository
 
     public void savePv(PV pv)
     {
-        File file = new File(userDirectory, pvPath);
+        File file = new File(userDirectory, "pv.txt");
         try(FileWriter writer = new FileWriter(file, true))
         {
             if(pv.getFirstPerson() == user)
@@ -85,7 +82,7 @@ public class InformationRepository
 
     public void saveGroup(Group group)
     {
-        File file = new File(userDirectory, groupsPath);
+        File file = new File(userDirectory, "group.txt");
         try(FileWriter writer = new FileWriter(file, true))
         {
             writer.write(group.getId()+"\n");
@@ -96,9 +93,18 @@ public class InformationRepository
         }
     }
 
+    public void saveAvatar() {
+        File file = new File(userDirectory, "avatar.txt");
+        try(FileWriter writer = new FileWriter(file, false)) {
+            writer.write(user.getAvatar() != null ? user.getAvatar() : "");
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void saveBioAndOtherData()
     {
-        try(FileWriter writer = new FileWriter(bioPath , false))
+        try(FileWriter writer = new FileWriter("bio.txt" , false))
         {
             writer.write(String.valueOf(user.getHowManyGroupCreated())+"\n"+user.getBio());
         }
@@ -111,7 +117,7 @@ public class InformationRepository
 
     public void saveContact(User contact)
     {
-        File file = new File(userDirectory, contactsPath);
+        File file = new File(userDirectory, "contact.txt");
         try(FileWriter writer = new FileWriter(file , true))
         {
             writer.write(contact.getId()+"\n");
@@ -126,7 +132,7 @@ public class InformationRepository
     public List<String> getPvIds()
     {
         List<String> ids = new ArrayList<>();
-        File file = new File(userDirectory, pvPath);
+        File file = new File(userDirectory, "pv.txt");
         try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
             String line;
@@ -150,7 +156,7 @@ public class InformationRepository
     public List<String> getGroupIds()
     {
         List<String> ids = new ArrayList<>();
-        File file = new File(userDirectory, groupsPath);
+        File file = new File(userDirectory, "group.txt");
         try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
             String line;
@@ -171,10 +177,24 @@ public class InformationRepository
         return ids;
     }
 
+    public String getAvatar() {
+        File file = new File(userDirectory, "avatar.txt");
+        StringBuilder sb = new StringBuilder();
+        try(BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
+        return sb.toString();
+    }
+
     public int getHowManyGroupCreated()
     {
         int howManyGroupsCreate = -1;
-        File file = new File(userDirectory, bioPath);
+        File file = new File(userDirectory, "bio.txt");
         try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
             String line = reader.readLine();
@@ -192,7 +212,7 @@ public class InformationRepository
     {
         int counter = 0;
         String bio = null;
-        File file = new File(userDirectory, bioPath);
+        File file = new File(userDirectory, "bio.txt");
         try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
             String line;
@@ -221,7 +241,7 @@ public class InformationRepository
     public List<String> getContactsId()
     {
         List<String> ids = new ArrayList<>();
-        File file = new File(userDirectory, contactsPath);
+        File file = new File(userDirectory, "contact.txt");
         try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
             String line;
@@ -268,7 +288,7 @@ public class InformationRepository
             }
         }
 
-        File file = new File(userDirectory, pvPath);
+        File file = new File(userDirectory, "pv.txt");
         try(FileWriter writer = new FileWriter(file , false))
         {
             for(String v : ids)
@@ -296,7 +316,7 @@ public class InformationRepository
             }
         }
 
-        File file = new File(userDirectory, groupsPath);
+        File file = new File(userDirectory, "group.txt");
         try(FileWriter writer = new FileWriter(file , false))
         {
             for(String v : ids)
@@ -324,7 +344,7 @@ public class InformationRepository
             }
         }
 
-        File file = new File(userDirectory, contactsPath);
+        File file = new File(userDirectory, "contact.txt");
         try(FileWriter writer = new FileWriter(file , false))
         {
             for(String v : ids)

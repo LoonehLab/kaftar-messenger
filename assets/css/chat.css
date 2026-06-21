@@ -426,6 +426,170 @@ body {
     color: var(--text-white);
 }
 
+.profile-setup-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 10px 0;
+    width: 100%;
+}
+
+.profile-avatar-wrapper {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid var(--border-light);
+    box-shadow: 0 0 15px var(--neon-glow);
+    background: var(--bg-input);
+}
+
+.profile-modal-avatar {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: bold;
+    color: var(--text-white);
+    background: linear-gradient(135deg, var(--dark-blue), var(--cyan-aqua));
+}
+
+.profile-modal-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-upload-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.profile-avatar-wrapper:hover .avatar-upload-overlay {
+    opacity: 1;
+}
+
+.profile-settings-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.avatar-delete-btn {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: rgba(239, 68, 68, 0.85);
+    border: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 11px;
+    z-index: 10;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.avatar-delete-btn:hover {
+    background: rgb(220, 38, 38);
+    transform: scale(1.1);
+}
+
+.profile-save-btn {
+    width: 100% !important;
+    margin-top: 15px;
+    padding: 12px !important;
+    background: linear-gradient(135deg, var(--dark-blue), var(--cyan-aqua)) !important;
+    border: 1px solid var(--cyan-aqua) !important;
+    color: var(--text-white) !important;
+    border-radius: 8px !important;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+    transition: all 0.2s ease;
+}
+
+.profile-save-btn:hover {
+    box-shadow: 0 0 15px var(--neon-glow) !important;
+    transform: translateY(-1px);
+    filter: brightness(1.1);
+}
+
+.user-avatar.main-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+    color: var(--text-white);
+    background: linear-gradient(135deg, var(--dark-blue), var(--cyan-aqua));
+    border: 1px solid var(--border-light);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.15);
+    cursor: pointer;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-size: 12px;
+    color: var(--text-main);
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.form-group input[type="text"],
+.form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    color: var(--text-white);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
+    border-color: var(--cyan-aqua);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.15);
+}
+
+.form-group textarea {
+    resize: none;
+}
+
 .chat-area {
     flex: 1;
     background-color: var(--bg-chat);

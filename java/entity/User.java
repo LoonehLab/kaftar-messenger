@@ -10,6 +10,7 @@ public class User
     private String id;
     private String fullName;
     private String password;
+    private String avatar;
     private String bio;
     private String phoneNumber;
     //private Security security;
@@ -45,6 +46,7 @@ public class User
     }
 
     private void initFields(boolean loadMode) {
+        avatar = "";
         bio = "";
         phoneNumber = "";
         pv = new ArrayList<>();
@@ -141,6 +143,7 @@ public class User
     public String getId(){ return id;}
     public String getFullName() { return fullName; }
     public String getPassword(){ return password;}
+    public String getAvatar() { return avatar; }
     public String getBio(){ return bio;}
     public String getPhoneNumber(){ return phoneNumber;}
     public List<PV> getPv(){ return pv; }
@@ -158,6 +161,7 @@ public class User
     public void setId(String id){ this.id = id; }
     public void setFullName(String fullName) { this.fullName = fullName; }
     public void setPassword(String password){ this.password = password; }
+    public void setAvatar(String avatar) { this.avatar = avatar; }
     public void setBio(String bio){ this.bio = bio; }
     public void setPhoneNumber(String phoneNumber){ this.phoneNumber = phoneNumber; }
 }

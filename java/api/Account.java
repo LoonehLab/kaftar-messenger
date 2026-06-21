@@ -73,8 +73,11 @@ public class Account {
                 json.append("{");
                 
                 // Basic Data
-                json.append(String.format("\"id\":\"%s\",\"userName\":\"%s\",", currentUser.getId(), currentUser.getUserName()));
-                
+                String userAvatar = currentUser.getInformationRepository().getAvatar();
+                if(userAvatar == null) userAvatar = "";
+                json.append(String.format("\"id\":\"%s\",\"userName\":\"%s\",\"profilePicture\":\"%s\",", 
+                    currentUser.getId(), currentUser.getUserName(), userAvatar));
+
                 // Private Chats
                 json.append("\"pvs\":[");
                 List<String> pvIds = currentUser.getInformationRepository().getPvIds();
@@ -82,7 +85,10 @@ public class Account {
                     String targetId = pvIds.get(i);
                     User target = userRepo.findUserById(targetId);
                     if(target == null) continue;
-                    json.append(String.format( "{\"targetId\":\"%s\",\"targetName\":\"%s\"}", target.getId(), target.getUserName()));
+                    String targetAvatar = target.getInformationRepository().getAvatar();
+                    if(targetAvatar == null) targetAvatar = "";
+                    json.append(String.format("{\"targetId\":\"%s\",\"targetName\":\"%s\",\"profilePicture\":\"%s\"}", 
+                        target.getId(), target.getUserName(), targetAvatar));
                     if(i < pvIds.size()-1) json.append(",");
                 }
                 json.append("],");
@@ -107,6 +113,43 @@ public class Account {
         });
     }
 
+    public static void avatar(HttpServer server) {
+        server.createContext("/api/user/avatar", exchange -> {
+            Core.handleCORS(exchange);
+            if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) return;
+            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) { // Save
+                String body = Core.getRequestBody(exchange);
+                String userId = Core.extractJsonValue(body, "userId");
+                String base64Image = Core.extractJsonValue(body, "profilePicture");
+                User currentUser = userRepo.findUserById(userId);
+                if (currentUser == null) {
+                    Core.sendResponse(exchange, 404, "{\"error\":\"User not found\"}");
+                    return;
+                }
+                currentUser.setAvatar(base64Image);
+                currentUser.getInformationRepository().saveAvatar();
+                Core.sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Profile picture updated successfully\"}");
+            }
+            
+            else if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) { // Load
+                String query = exchange.getRequestURI().getQuery();
+                String userId = query != null && query.contains("userId=") ? query.split("userId=")[1] : "";
+                User currentUser = userRepo.findUserById(userId);
+                if (currentUser == null) {
+                    Core.sendResponse(exchange, 404, "{\"error\":\"User not found\"}");
+                    return;
+                }
+                String base64Image = currentUser.getInformationRepository().getAvatar();
+                if (base64Image == null) {
+                    base64Image = "";
+                }
+                Core.sendResponse(exchange, 200, String.format("{\"userId\":\"%s\",\"profilePicture\":\"%s\"}", currentUser.getId(), base64Image));
+            }
+
+            else Core.sendResponse(exchange, 405, "Method Not Allowed");
+        });
+    }
+
     public static void search(HttpServer server) {
         server.createContext("/api/user/search", exchange -> {
             Core.handleCORS(exchange);
@@ -123,9 +166,12 @@ public class Account {
                     if (usr.getUserName().startsWith(searchInput)){
                         if (!first) json.append(",");
                         first = false;
+                        String usrAvatar = usr.getInformationRepository().getAvatar();
+                        if(usrAvatar == null) usrAvatar = "";
                         json.append("{");
                         json.append("\"id\":\"").append(usr.getId()).append("\",");
-                        json.append("\"username\":\"").append(usr.getUserName()).append("\"");
+                        json.append("\"username\":\"").append(usr.getUserName()).append("\",");
+                        json.append("\"profilePicture\":\"").append(usrAvatar).append("\"");
                         json.append("}");
                     }
                 }
