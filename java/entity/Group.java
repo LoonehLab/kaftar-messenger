@@ -34,7 +34,7 @@ public class Group extends Chat
             m.addGroup(this);
         }
 
-        id = (owner.getId())+Integer.toString(owner.getHowManyGroupCreated());
+        id = String.valueOf(System.currentTimeMillis());
         messages = new ArrayList<>();
 
         groupRepository = new GroupRepository(this);
