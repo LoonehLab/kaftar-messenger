@@ -1,4 +1,5 @@
 import api.*;
+import cli.Admin;
 
 import com.sun.net.httpserver.HttpServer;
 import java.io.*;
@@ -20,5 +21,7 @@ public class Server {
         server.setExecutor(null);
         server.start();
         System.out.println("Kaftar Server is running on port 8081...");
+        Thread adminCliThread = new Thread(new Admin());
+        adminCliThread.start();
     }
 }
