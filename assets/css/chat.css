@@ -736,6 +736,43 @@ body {
     box-shadow: 0 0 10px var(--msg-outgoing-shadow);
 }
 
+.context-menu {
+    background: var(--bg-sidebar);
+    border: 1px solid var(--msg-outgoing-border);
+    box-shadow: 0 0 12px var(--msg-outgoing-shadow);
+    border-radius: 6px;
+    padding: 4px 0;
+    min-width: 100px;
+}
+
+.context-menu button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    color: var(--text-main);
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.2s, color 0.2s;
+}
+
+.context-menu button:hover {
+    background: rgba(0, 240, 255, 0.1);
+    color: var(--text-white);
+}
+
+.context-menu button.delete-item {
+    color: #ef4444;
+}
+.context-menu button.delete-item:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+}
+
 .chat-footer {
     padding: 15px 20px 25px 20px;
     background-color: var(--bg-chat);

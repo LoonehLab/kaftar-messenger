@@ -17,6 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsPhone = document.getElementById('settingsPhone');
     const saveProfileBtn = document.getElementById('saveProfileBtn');
 
+    const contextMenu = document.getElementById('messageContextMenu');
+    const ctxEditBtn = document.getElementById('ctxEditBtn');
+    const ctxDeleteBtn = document.getElementById('ctxDeleteBtn');
+    let selectedMessageId = null;
+
     const messageInput = document.querySelector('.input-container input');
     const messagesContainer = document.querySelector('.messages-container');
     const appContainer = document.querySelector('.app-container');
@@ -171,6 +176,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             messages.forEach(msg => {
                 const messageDiv = document.createElement('div');
+                messageDiv.setAttribute('data-msg-id', msg.id);
+                messageDiv.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    selectedMessageId = msg.id;
+                    contextMenu.style.left = `${e.pageX}px`;
+                    contextMenu.style.top = `${e.pageY}px`;
+                    contextMenu.style.display = 'block';
+                });
                 messageDiv.classList.add('message');
                 if (msg.senderId === CURRENT_USER_ID) {
                     messageDiv.classList.add('outgoing');
@@ -438,6 +451,67 @@ document.addEventListener('DOMContentLoaded', () => {
         saveProfileBtn.addEventListener('click', () => {
             alert('Other information saved locally! Global update API integration coming soon.');
             if (profileSettingsModal) profileSettingsModal.classList.remove('active');
+        });
+    }
+
+    //=============( Message Modal )=============
+    document.addEventListener('click', () => {
+        if (contextMenu) contextMenu.style.display = 'none';
+    });
+
+    if (ctxDeleteBtn) { //Delete
+        ctxDeleteBtn.addEventListener('click', async () => {
+            if (!selectedMessageId) return;
+            if (!confirm("Delete this message?")) return;
+            const bodyData = {
+                chatType: activeChat.type,
+                messageId: selectedMessageId.toString(),
+                user1: CURRENT_USER_ID,
+                user2: activeChat.targetId,
+                groupId: activeChat.targetId
+            };
+            try {
+                const response = await fetch(`${API_BASE_URL}/message`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyData)
+                });
+                if (response.ok) {
+                    await loadMessages();
+                }
+            }
+            catch (error) {
+                console.error('Error deleting message:', error);
+            }
+        });
+    }
+
+    if (ctxEditBtn) { //Edit
+        ctxEditBtn.addEventListener('click', async () => {
+            if (!selectedMessageId) return;
+            const newText = prompt("Edit your message:");
+            if (newText === null || newText.trim() === "") return;
+            const bodyData = {
+                chatType: activeChat.type,
+                messageId: selectedMessageId.toString(),
+                user1: CURRENT_USER_ID,
+                user2: activeChat.targetId,
+                groupId: activeChat.targetId,
+                newText: newText.trim()
+            };
+            try {
+                const response = await fetch(`${API_BASE_URL}/message`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyData)
+                });
+                if (response.ok) {
+                    await loadMessages();
+                }
+            }
+            catch (error) {
+                console.error('Error editing message:', error);
+            }
         });
     }
 

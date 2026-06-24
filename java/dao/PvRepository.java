@@ -139,4 +139,26 @@ public class PvRepository
             e.printStackTrace();
         }
     }
+
+    public void editMessage(Message mess, String newText) {
+        List<Message> keeper = this.getArrayOfMessages();
+        try (FileWriter writer = new FileWriter(file, false)) {
+            writer.write(pv.getFirstPerson().getId() + "\n" + pv.getSecondPerson().getId() + "\n" + pv.getIsDeleted() + "\n");      
+            for (Message m : keeper) {
+                if (mess.getId() == m.getId()) {
+                    String messageStr = "║" + mess.getId() + " , " + mess.getSenderId() + " , " + 
+                                        mess.getReceiverId() + " , " + mess.getTime() + " , " + 
+                                        mess.getEdited() + " , " + mess.getSeen() + " , " + newText + "\n";
+                    writer.write(messageStr);
+                } else {
+                    String messageStr = "║" + m.getId() + " , " + m.getSenderId() + " , " + 
+                                        m.getReceiverId() + " , " + m.getTime() + " , " + 
+                                        m.getEdited() + " , " + m.getSeen() + " , " + m.getText() + "\n";
+                    writer.write(messageStr);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

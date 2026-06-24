@@ -46,7 +46,7 @@ public class PV extends Chat
         
         messages.add(text);
         numOfMessages++;
-        text.setId(messages.size());
+        text.setId(numOfMessages);
 
         if(text.getSenderId() == firstPerson.getId())
         {
@@ -64,13 +64,21 @@ public class PV extends Chat
 
     public void edit(String newText , Message mes)
     {
-        mes.setText(newText);
+        for (int i = 0; i < messages.size(); i++) {
+            if (messages.get(i).getId() == mes.getId()) {
+                messages.get(i).setText(newText);
+                pvRepository.editMessage(messages.get(i), newText);
+                return;
+            }
+        }
+        System.out.println("پیام مورد نظر برای ویرایش یافت نشد!");
     }
 
     public void deleteMessage(Message mes)
     {
         mes.setDeleted(true);
-        numOfMessages--;
+        // numOfMessages--;
+        messages.remove(mes);
         pvRepository.removeMessage(mes);
     }
 
