@@ -13,6 +13,7 @@ public class Server {
         Account.load(server);
         Account.avatar(server);
         Account.search(server);
+        Info.load(server);
         Chatroom.loadPV(server);
         Chatroom.loadGroup(server);
         Contacts.Manage(server);
