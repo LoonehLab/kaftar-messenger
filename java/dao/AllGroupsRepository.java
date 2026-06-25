@@ -62,7 +62,7 @@ public class AllGroupsRepository
                 {
                     User owner = UserRepository.getInstance().findUserById(data[2]);
                     if(owner == null)return null;
-                    return new Group(owner, data[1], owner);
+                    return new Group(data[0], owner, data[1], owner);
                 }
             }
         }
@@ -86,7 +86,7 @@ public class AllGroupsRepository
                 String[] data = line.split(" , ");
                 User owner = UserRepository.getInstance().findUserById(data[2]);
                 if(owner != null)
-                    groups.add(new Group(owner,data[1],owner));
+                    groups.add(new Group(data[0], owner, data[1], owner));
             }
         }
 

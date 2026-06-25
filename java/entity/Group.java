@@ -17,28 +17,63 @@ public class Group extends Chat
 
     public Group(User owner , String name , User ... mem)
     {
+        this(String.valueOf(System.currentTimeMillis()), owner, name, true, mem);
+    }
+
+    public Group(String id , User owner , String name , User ... mem)
+    {
+        this(id, owner, name, false, mem);
+    }
+
+    private Group(String id , User owner , String name , boolean isNew , User ... mem)
+    {
+        this.id = id;
         this.name = name;
         this.numOfMessages = 0;
 
         members = new ArrayList<>();
         for(User m : mem)
         {
-            (this.members).add(m);
+            members.add(m);
 
             if(m == owner)
             {
                 this.owner = m;
-                m.groupCreated();
+                if(isNew)
+                {
+                    m.groupCreated();
+                }
             }
 
             m.addGroup(this);
         }
 
-        id = String.valueOf(System.currentTimeMillis());
         messages = new ArrayList<>();
 
         groupRepository = new GroupRepository(this);
         this.messages = groupRepository.getArrayOfMessages();
+        this.numOfMessages = this.messages.size();
+
+        for(String memberId : groupRepository.getArrayOfMembersId())
+        {
+            boolean alreadyMember = false;
+            for(User m : members)
+            {
+                if(m.getId().equals(memberId))
+                {
+                    alreadyMember = true;
+                    break;
+                }
+            }
+            if(alreadyMember) continue;
+
+            User member = UserRepository.getInstance().findUserById(memberId);
+            if(member != null)
+            {
+                members.add(member);
+                member.addGroup(this);
+            }
+        }
     }
 
     public void send(Message text)
@@ -49,19 +84,18 @@ public class Group extends Chat
 
         for(User u : members)
         {
-            if(u.getId() == text.getSenderId())
+            if(u.getId().equals(text.getSenderId()))
             {
                 u.addSentMessage(text);
 
                 for(User v : members)
                 {
-                    if(v != u)
+                    if(!v.getId().equals(u.getId()))
                     {
                         v.addReceivedMessage(text);
                     }
                 }
-
-                return;
+                break;
             }
         }
         groupRepository.addMessage(text);
@@ -108,6 +142,7 @@ public class Group extends Chat
     public void addMember(User user)
     {
         members.add(user);
+        groupRepository.addMember(user);
     }
 
 
