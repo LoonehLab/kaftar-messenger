@@ -24,8 +24,6 @@ public class User
     private List<Message> sentMessages;
     private List<Message> receivedMessages;
 
-    private int howManyGroupsCreate;
-
     private InformationRepository informationRepository;
 
     public User(String userName, String fullName, String password) {
@@ -55,7 +53,6 @@ public class User
         receivedMessages = new ArrayList<>();
         contacts = new ArrayList<>();
         messageOfSavedMessage = new ArrayList<>();
-        howManyGroupsCreate = 0;
         if(!loadMode) informationRepository = new InformationRepository(this);
     }
 
@@ -121,7 +118,7 @@ public class User
 
     public void groupCreated()
     {
-        howManyGroupsCreate++;
+        // howManyGroupsCreate++;
     }
 
     public void addSentMessage(Message mess)
@@ -149,7 +146,6 @@ public class User
     public List<PV> getPv(){ return pv; }
     public List<Group> getGroups(){ return groups; }
     public List<User> getContacts(){ return contacts; }
-    public int getHowManyGroupCreated() { return howManyGroupsCreate; }
     public InformationRepository getInformationRepository()
     {
         if(informationRepository == null)

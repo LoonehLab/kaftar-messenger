@@ -106,7 +106,7 @@ public class InformationRepository
     {
         try(FileWriter writer = new FileWriter("bio.txt" , false))
         {
-            writer.write(String.valueOf(user.getHowManyGroupCreated())+"\n"+user.getBio());
+            writer.write(user.getBio());
         }
 
         catch(IOException e)
