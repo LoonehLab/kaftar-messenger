@@ -75,8 +75,8 @@ public class Account {
                 // Basic Data
                 String userAvatar = currentUser.getInformationRepository().getAvatar();
                 if(userAvatar == null) userAvatar = "";
-                json.append(String.format("\"id\":\"%s\",\"userName\":\"%s\",\"profilePicture\":\"%s\",", 
-                    currentUser.getId(), currentUser.getUserName(), userAvatar));
+                json.append(String.format("\"id\":\"%s\",\"userName\":\"%s\",\"fullName\":\"%s\",\"profilePicture\":\"%s\",", 
+                    currentUser.getId(), currentUser.getUserName(), currentUser.getFullName(), userAvatar));
 
                 // Private Chats
                 json.append("\"pvs\":[");

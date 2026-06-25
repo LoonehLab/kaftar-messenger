@@ -51,6 +51,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =============( Profile Avatar )=============
+    function getFirstName(fullName, fallback = "") {
+        if (fullName && fullName.trim()) {
+            return fullName.trim().split(/\s+/)[0];
+        }
+        return fallback;
+    }
+
+    const pvDisplayNameCache = new Map();
+
+    async function resolvePvDisplayName(targetId, username) {
+        if (pvDisplayNameCache.has(targetId)) {
+            return pvDisplayNameCache.get(targetId);
+        }
+        try {
+            const res = await fetch(`${API_BASE_URL}/details?userId=${targetId}`);
+            if (res.ok) {
+                const data = await res.json();
+                const displayName = data.fullName || username;
+                pvDisplayNameCache.set(targetId, displayName);
+                return displayName;
+            }
+        } catch (err) {
+            console.error("Error resolving display name:", err);
+        }
+        return username;
+    }
+
     function getAvatarHTML(name, base64Image) {
         if (base64Image && base64Image.trim() !== "") {
             return `<img src="${base64Image}" style="width:100%; height:100%; object-fit:cover;">`;
@@ -73,43 +100,68 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =============( User Data and Chats )=============
-    async function LoadChatrooms() {
+    async function LoadChatrooms(options = {}) {
+        const { preserveActive = false, selectTargetId = null, selectType = null } = options;
         try {
             const res = await fetch(`${API_BASE_URL}/user/init?userId=${CURRENT_USER_ID}`);
             const userData = await res.json();
             console.log("User data loaded:", userData);
             chatroomListContainer.innerHTML = '';
-            const myName = userData.fullName || userData.username || "Me";
-            const myAvatar = userData.avatar || userData.profilePicture || "";
-            updateMainUserAvatar(myName, myAvatar);
-            if (settingsUsername) settingsUsername.value = userData.username || CURRENT_USER_ID;
+            const myDisplayName = getFirstName(
+                userData.fullName,
+                userData.userName || userData.username || "Me"
+            );
+            const myAvatar = userData.profilePicture || userData.avatar || "";
+            updateMainUserAvatar(myDisplayName, myAvatar);
+            if (settingsUsername) settingsUsername.value = userData.userName || userData.username || CURRENT_USER_ID;
             if (settingsFullName) settingsFullName.value = userData.fullName || "";
             if (settingsBio) settingsBio.value = userData.bio || "";
             if (settingsPhone) settingsPhone.value = userData.phone || "";
 
-            userData.pvs.forEach(pv => {
-                createChatroomItemHTML(pv.targetId, pv.targetName, 'pv', pv.profilePicture || null); 
+            const resolvedPvs = await Promise.all(
+                (userData.pvs || []).map(async (pv) => ({
+                    ...pv,
+                    displayName: await resolvePvDisplayName(pv.targetId, pv.targetName)
+                }))
+            );
+
+            resolvedPvs.forEach(pv => {
+                createChatroomItemHTML(pv.targetId, pv.displayName, 'pv', pv.profilePicture || null);
             });
 
-            userData.groups.forEach(group => {
-                createChatroomItemHTML(group.groupId, group.groupName, 'group', null); 
+            (userData.groups || []).forEach(group => {
+                createChatroomItemHTML(group.groupId, group.groupName, 'group', null);
             });
-            const firstChat = chatroomListContainer.querySelector('.chatroom-item'); 
-            if (firstChat) {
-                firstChat.classList.add('active');
-                const firstChatName = firstChat.querySelector('.room-name').textContent;
-                currentRoomName.textContent = firstChatName;
-                activeChat.type = firstChat.getAttribute('data-type');
-                activeChat.targetId = firstChat.getAttribute('data-target-id');
-                let firstChatAvatar = null;
-                if (activeChat.type === 'pv' && userData.pvs) {
-                    const foundPv = userData.pvs.find(p => p.targetId === activeChat.targetId);
-                    if (foundPv) firstChatAvatar = foundPv.profilePicture;
+
+            let itemToActivate = null;
+            if (selectTargetId && selectType) {
+                itemToActivate = chatroomListContainer.querySelector(
+                    `.chatroom-item[data-target-id="${selectTargetId}"][data-type="${selectType}"]`
+                );
+            } else if (preserveActive && activeChat.targetId) {
+                itemToActivate = chatroomListContainer.querySelector(
+                    `.chatroom-item[data-target-id="${activeChat.targetId}"][data-type="${activeChat.type}"]`
+                );
+            } else if (!preserveActive && !selectTargetId && !activeChat.targetId) {
+                itemToActivate = chatroomListContainer.querySelector('.chatroom-item');
+            }
+
+            if (itemToActivate) {
+                document.querySelectorAll('.chatroom-item').forEach(i => i.classList.remove('active'));
+                itemToActivate.classList.add('active');
+                const chatName = itemToActivate.querySelector('.room-name').textContent;
+                currentRoomName.textContent = chatName;
+                activeChat.type = itemToActivate.getAttribute('data-type');
+                activeChat.targetId = itemToActivate.getAttribute('data-target-id');
+                const avatarEl = itemToActivate.querySelector('.room-avatar');
+                currentRoomAvatar.innerHTML = avatarEl.innerHTML;
+                if (appContainer) appContainer.classList.add('chat-open');
+
+                if (!preserveActive || selectTargetId) {
+                    loadMessages();
+                    setupAutoUpdate();
                 }
-                currentRoomAvatar.innerHTML = getAvatarHTML(firstChatName, firstChatAvatar);
-                loadMessages();
-                setupAutoUpdate();
-            } else {
+            } else if (!chatroomListContainer.querySelector('.chatroom-item')) {
                 messagesContainer.innerHTML = `
                     <div class="chat-empty-state">
                         <div class="empty-state-bubble">
@@ -209,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
     sidebarSearch.addEventListener('input', async () => {
         const searchInput = sidebarSearch.value.trim();
         if (searchInput.length < 4) {
-            LoadChatrooms();
+            LoadChatrooms({ preserveActive: true });
             return;
         }
 
@@ -223,8 +275,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatroomListContainer.innerHTML = '<div style="padding:15px; text-align:center; opacity:0.6;">No users found</div>';
                 return;
             }
-            searchResults.forEach(user => {
-                createSearchItemHTML(user.id, user.username, user.profilePicture || null);
+            const resolvedResults = await Promise.all(
+                searchResults.map(async (user) => ({
+                    ...user,
+                    displayName: await resolvePvDisplayName(user.id, user.username)
+                }))
+            );
+            resolvedResults.forEach(user => {
+                createSearchItemHTML(user.id, user.displayName, user.profilePicture || null);
             });
         } catch (error) {
             console.error('Error during search:', error);
@@ -251,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (appContainer) appContainer.classList.add('chat-open');
             loadMessages();
             setupAutoUpdate();
-            LoadChatrooms(); 
+            LoadChatrooms({ preserveActive: true });
         });
 
         chatroomListContainer.appendChild(itemDiv);
@@ -281,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 messageInput.value = '';
                 await loadMessages();
-                await loadChatrooms();
+                await LoadChatrooms({ preserveActive: true });
             }
         } catch (error) {
             console.error('Error sending message:', error);
@@ -341,11 +399,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify(bodyData)
                 });
                 if (response.ok) {
+                    const result = await response.json();
                     alert(`Group "${groupName}" created successfully!`);
                     groupCreationForm.style.display = 'none';
                     createGroupModalBtn.style.display = 'flex';
                     contactsModal.classList.remove('active');
-                    await loadChatrooms();
+                    activeChat.type = 'group';
+                    activeChat.targetId = result.groupId;
+                    await LoadChatrooms({ selectTargetId: result.groupId, selectType: 'group' });
                 } else {
                     console.error('Failed to create group.');
                 }
@@ -366,7 +427,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch(`${API_BASE_URL}/user/avatar?userId=${CURRENT_USER_ID}`);
                 if (response.ok) {
                     const data = await response.json();
-                    const currentName = (settingsFullName && settingsFullName.value) ? settingsFullName.value : "Me";
+                    const currentName = getFirstName(
+                        settingsFullName?.value,
+                        settingsUsername?.value || "Me"
+                    );
                     if (data.profilePicture && data.profilePicture.trim() !== "") {
                         if (profileModalAvatar) {
                             profileModalAvatar.innerHTML = `<img src="${data.profilePicture}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
@@ -410,7 +474,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     if (response.ok) {
                         alert('Avatar uploaded successfully!');
-                        const currentName = (settingsFullName && settingsFullName.value) ? settingsFullName.value : "Me";
+                        const currentName = getFirstName(
+                            settingsFullName?.value,
+                            settingsUsername?.value || "Me"
+                        );
                         updateMainUserAvatar(currentName, base64String);
                     } else {
                         alert('Failed to upload avatar. Status: ' + response.status);
@@ -442,7 +509,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (response.ok) {
                     alert('Avatar deleted successfully!');
-                    const currentName = (settingsFullName && settingsFullName.value) ? settingsFullName.value : "Me";
+                    const currentName = getFirstName(
+                        settingsFullName?.value,
+                        settingsUsername?.value || "Me"
+                    );
                     updateMainUserAvatar(currentName, "");
                 } else {
                     alert('Failed to delete avatar.');
