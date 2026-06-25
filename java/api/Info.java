@@ -27,7 +27,7 @@ public class Info {
                         if (g != null) 
                         {
                             response = String.format(
-                                "{\"type\":\"group\", \"name\":\"%s\", \"owner\":\"%s\", \"membersCount\":%d}",
+                                "{\"name\":\"%s\", \"owner\":\"%s\", \"membersCount\":%d}",
                                 g.getName(), g.getOwner().getUserName(), g.getMembers().size()
                             );
                         }
@@ -39,8 +39,8 @@ public class Info {
                         User u = UserRepository.getInstance().findUserById(uId);
                         if (u != null) {
                             response = String.format(
-                                "{\"type\":\"user\", \"name\":\"%s\", \"bio\":\"%s\", \"id\":\"%s\"}",
-                                u.getUserName(), u.getBio(), u.getId()
+                                "{\"userName\":\"%s\", \"fullName\":\"%s\", \"bio\":\"%s\"}",
+                                u.getUserName(), u.getFullName(), u.getBio()
                             );
                         }
                     }

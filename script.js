@@ -22,6 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctxDeleteBtn = document.getElementById('ctxDeleteBtn');
     let selectedMessageId = null;
 
+    const gearIcon = document.querySelector('.gear-icon');
+    const headerSettingsMenu = document.getElementById('headerSettingsMenu');
+    const headerViewProfileBtn = document.getElementById('headerViewProfileBtn');
+
     const messageInput = document.querySelector('.input-container input');
     const messagesContainer = document.querySelector('.messages-container');
     const appContainer = document.querySelector('.app-container');
@@ -178,11 +182,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const messageDiv = document.createElement('div');
                 messageDiv.setAttribute('data-msg-id', msg.id);
                 messageDiv.addEventListener('contextmenu', (e) => {
+                    if (messageDiv.classList.contains('incoming')) return;
                     e.preventDefault();
                     selectedMessageId = msg.id;
-                    contextMenu.style.left = `${e.pageX}px`;
+                    contextMenu.style.display = 'block'; 
+                    const menuWidth = contextMenu.offsetWidth || 120;
+                    contextMenu.style.left = `${e.pageX - menuWidth}px`;
                     contextMenu.style.top = `${e.pageY}px`;
-                    contextMenu.style.display = 'block';
                 });
                 messageDiv.classList.add('message');
                 if (msg.senderId === CURRENT_USER_ID) {
@@ -512,6 +518,99 @@ document.addEventListener('DOMContentLoaded', () => {
             catch (error) {
                 console.error('Error editing message:', error);
             }
+        });
+    }
+
+    // =============( Settings modal )=============
+    if (gearIcon) {
+        gearIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!activeChat.targetId) return;
+            headerSettingsMenu.style.display = 'block';
+            const menuWidth = headerSettingsMenu.offsetWidth || 130;
+            headerSettingsMenu.style.left = `${e.pageX - menuWidth}px`;
+            headerSettingsMenu.style.top = `${e.pageY + 10}px`;
+        });
+    }
+
+    document.addEventListener('click', () => {
+        if (headerSettingsMenu) headerSettingsMenu.style.display = 'none';
+    });
+
+    // =============( Profiles modal )=============
+    if (headerViewProfileBtn) {
+        headerViewProfileBtn.addEventListener('click', async () => {
+            if (!activeChat.targetId) return;
+            let url = `${API_BASE_URL}/details?`;
+            if (activeChat.type === 'pv') {
+                url += `userId=${activeChat.targetId}`;
+            } else {
+                url += `groupId=${activeChat.targetId}`;
+            }
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Failed to fetch details");
+                const data = await response.json();
+                if (saveProfileBtn) saveProfileBtn.style.display = 'none';
+                if (deleteAvatarBtn) deleteAvatarBtn.style.display = 'none';
+                settingsFullName.readOnly = true;
+                settingsBio.readOnly = true;
+                if (settingsPhone) settingsPhone.parentNode.style.display = 'none';
+
+                if (activeChat.type === 'pv') {
+                    document.getElementById('modalTitle').textContent = "User Profile"; 
+                    settingsUsername.value = data.userName || "";
+                    settingsFullName.value = data.fullName || "";
+                    settingsBio.value = data.bio || "No bio available.";
+                    try {
+                        const avatarRes = await fetch(`${API_BASE_URL}/user/avatar?userId=${activeChat.targetId}`);
+                        if (avatarRes.ok) {
+                            const avatarData = await avatarRes.json();
+                            if (avatarData && avatarData.profilePicture) {
+                                let base64Image = avatarData.profilePicture;
+                                if (!base64Image.startsWith('data:image')) {
+                                    base64Image = `data:image/jpeg;base64,${base64Image}`;
+                                }
+
+                                profileModalAvatar.innerHTML = `<img src="${base64Image}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+                            } else {
+                                const letter = (data.fullName || data.userName || "?").charAt(0).toUpperCase();
+                                profileModalAvatar.innerHTML = `<div class="modal-contact-avatar" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:24px; background:var(--dark-blue); color:white; border-radius:50%;">${letter}</div>`;
+                            }
+                        } else {
+                            throw new Error("Avatar not found");
+                        }
+                    } catch (err) {
+                        const letter = (data.fullName || data.userName || "?").charAt(0).toUpperCase();
+                        profileModalAvatar.innerHTML = `<div class="modal-contact-avatar" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:24px; background:var(--dark-blue); color:white; border-radius:50%;">${letter}</div>`;
+                    }
+                } else {
+                    document.getElementById('modalTitle').textContent = "Group Info";
+                    settingsUsername.value = `Owner: ${data.owner}`;
+                    settingsFullName.value = data.name || "";
+                    settingsBio.value = `Members Count: ${data.membersCount} users`;
+                    const letter = (data.name || "G").charAt(0).toUpperCase();
+                    profileModalAvatar.innerHTML = `<div class="modal-contact-avatar" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:24px; background:var(--dark-blue); color:white; border-radius:50%;">${letter}</div>`;
+                }
+
+                if (profileSettingsModal) profileSettingsModal.classList.add('active');
+
+            } catch (error) {
+                console.error("Error loading chat details:", error);
+                alert("Could not load profile details.");
+            }
+        });
+    }
+
+    if (closeProfileSettingsBtn) {
+        closeProfileSettingsBtn.addEventListener('click', () => {
+            if (profileSettingsModal) profileSettingsModal.classList.remove('active');
+            if (saveProfileBtn) saveProfileBtn.style.display = 'block';
+            if (deleteAvatarBtn) deleteAvatarBtn.style.display = 'flex';
+            settingsFullName.readOnly = false;
+            settingsBio.readOnly = false;
+            if (settingsPhone) settingsPhone.parentNode.style.display = 'block';
+            document.getElementById('modalTitle').textContent = "Profile Settings"; 
         });
     }
 

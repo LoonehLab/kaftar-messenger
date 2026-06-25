@@ -641,6 +641,11 @@ body {
     color: var(--text-white);
 }
 
+.header-settings {
+    position: relative;
+    cursor: pointer;
+}
+
 .messages-container {
     flex: 1;
     overflow-y: auto;
