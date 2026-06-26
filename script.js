@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const backBtn = document.querySelector('.back-btn');
     if (backBtn) {
         backBtn.addEventListener('click', () => {
-            appContainer.classList.remove('chat-open'); // بستن باکس چت و برگشت به لیست چت‌ها در موبایل
+            appContainer.classList.remove('chat-open');
         });
     }
 
