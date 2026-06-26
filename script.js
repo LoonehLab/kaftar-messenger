@@ -45,26 +45,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // =============( Switch Mode Button )=============
     if (themeToggleBtn) {
         themeToggleBtn.addEventListener('click', () => {
-            const htmlElement = document.documentElement; // <html> tag
+            const htmlElement = document.documentElement;
             const currentTheme = htmlElement.getAttribute('data-theme');
             const icon = themeToggleBtn.querySelector('i');
-
             if (currentTheme === 'dark') {
-                // Light mode par switch karo
                 htmlElement.setAttribute('data-theme', 'light');
-                // Agar light mode mein hain to Mah (Moon) ka icon dikhao
                 icon.className = 'fas fa-moon';
                 localStorage.setItem('theme', 'light');
             } else {
-                // Dark mode par switch karo
                 htmlElement.setAttribute('data-theme', 'dark');
-                // Agar dark mode mein hain to Khorshid (Sun) ka icon dikhao
                 icon.className = 'fas fa-sun';
                 localStorage.setItem('theme', 'dark');
             }
         });
-
-        // Page load hote hi purana saved theme apply karne ke liye:
         const savedTheme = localStorage.getItem('theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
         const icon = themeToggleBtn.querySelector('i');
