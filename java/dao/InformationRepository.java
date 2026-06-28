@@ -191,7 +191,7 @@ public class InformationRepository
         return sb.toString();
     }
 
-    public int getHowManyGroupCreated()
+    /*public int getHowManyGroupCreated()
     {
         int howManyGroupsCreate = -1;
         File file = new File(userDirectory, "bio.txt");
@@ -206,28 +206,20 @@ public class InformationRepository
         }
 
         return howManyGroupsCreate;
-    }
+    }*/
 
     public String getBio()
     {
-        int counter = 0;
         String bio = null;
         File file = new File(userDirectory, "bio.txt");
         try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
-            String line;
+            String line = reader.readLine();
+            bio = line;
 
-            while ((line = reader.readLine()) != null) 
+            if(bio == null)
             {
-                if(counter == 0)
-                {
-                    counter++;
-                }
-
-                if(counter == 1)
-                {
-                    bio = line;
-                }
+                return null;
             }
         }
         catch(IOException e)
