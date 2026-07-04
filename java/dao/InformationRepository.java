@@ -67,11 +67,11 @@ public class InformationRepository
         {
             if(pv.getFirstPerson() == user)
             {
-                writer.write(pv.getSecondPerson().getId()+"\n");
+                writer.write(pv.getSecondPerson().getId()+" , "+pv.getIsPinnedForFirst()+"\n");
             }
             else if(pv.getSecondPerson() == user)
             {
-                writer.write(pv.getFirstPerson().getId()+"\n");
+                writer.write(pv.getFirstPerson().getId()+" , "+pv.getIsPinnedForSecond()+"\n");
             }
         }
         catch(IOException e) 
@@ -138,9 +138,10 @@ public class InformationRepository
             String line;
             while ((line = reader.readLine()) != null) 
             {
-                if(!line.isEmpty()) 
+                String[] parts = line.split(" , ");
+                if(!parts[0].isEmpty()) 
                 {
-                    ids.add(line.trim());
+                    ids.add(parts[0].trim());
                 }
             }
         }
@@ -151,6 +152,31 @@ public class InformationRepository
         }
 
         return ids;
+    }
+
+    public List<Boolean> getPvIsPinned()
+    {
+        List<Boolean> isPinned = new ArrayList<>();
+        File file = new File(userDirectory, "pv.txt");
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        {
+            String line;
+            while ((line = reader.readLine()) != null) 
+            {
+                String[] parts = line.split(" , ");
+                if(!parts[1].isEmpty()) 
+                {
+                    isPinned.add(Boolean.parseBoolean(parts[1]));
+                }
+            }
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return isPinned;
     }
 
     public List<String> getGroupIds()
@@ -295,6 +321,69 @@ public class InformationRepository
         }
     }
 
+    public void changePinPv(PV pv)
+    {
+        List<String> ids = getPvIds();
+        List<Boolean> pin = getPvIsPinned();
+
+        for(int i=0 ; i<ids.size() ; i++)
+        {
+            if((pv.getFirstPerson().getId()).equals(user.getId()))
+            {
+                if(ids.get(i).equals(pv.getSecondPerson().getId()))
+                {
+                    if(pv.getIsPinnedForFirst())
+                    {
+                        pv.setPinForFirst(false);
+                        pin.set(i, false);
+                        break;
+                    }
+
+                    else
+                    {
+                        pv.setPinForFirst(true);
+                        pin.set(i, true);
+                        break;
+                    }
+                }
+            }
+
+            if((pv.getSecondPerson().getId()).equals(user.getId()))
+            {
+                if(ids.get(i).equals(pv.getFirstPerson().getId()))
+                {
+                    if(pv.getIsPinnedForSecond())
+                    {
+                        pv.setPinForSecond(false);
+                        pin.set(i, false);
+                        break;
+                    }
+
+                    else
+                    {
+                        pv.setPinForSecond(true);
+                        pin.set(i, true);
+                        break;
+                    }
+                }
+            }
+        }
+
+        File file = new File(userDirectory, "pv.txt");
+        try(FileWriter writer = new FileWriter(file , false))
+        {
+            for(int i=0 ; i<ids.size() ; i++)
+            {
+                writer.write(ids.get(i)+" , "+pin.get(i)+"\n");
+            }
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
     public void removeGroup(Group group)
     {
         List<String> ids = getGroupIds();
@@ -349,5 +438,43 @@ public class InformationRepository
         {
             e.printStackTrace();
         }
+    }
+
+    public boolean getPvIsPinned(PV pv)
+    {
+        File file = new File(userDirectory, "pv.txt");
+
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        {
+            String line;
+
+            while((line = reader.readLine()) != null)
+            {
+                String[] parts = line.split(" , ");
+
+                if(pv.getFirstPerson() == user)
+                {
+                    if(parts[0].equals(pv.getSecondPerson().getId()))
+                    {
+                        return Boolean.parseBoolean(parts[1]);
+                    }
+                }
+
+                else if(pv.getSecondPerson() == user)
+                {
+                    if(parts[0].equals(pv.getFirstPerson().getId()))
+                    {
+                        return Boolean.parseBoolean(parts[1]);
+                    }
+                }
+            }
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return false;
     }
 }

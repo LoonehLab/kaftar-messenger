@@ -20,7 +20,7 @@ public class Core {
         if(pv != null) return pv;
         PV newPv;
         if(u1.getId().equals(u2.getId())) newPv = new SavedMessage(u1 , u1);
-        else newPv = new PV(u1 , u2);
+        else newPv = new PV(u1 , u2 , true);
         u1.getInformationRepository().savePv(newPv);
         u2.getInformationRepository().savePv(newPv);
 
@@ -30,7 +30,7 @@ public class Core {
     protected static PV findPV(User u1 , User u2) {
         List<String> ids = u1.getInformationRepository().getPvIds();
         for(String id : ids)
-            if(id.equals(u2.getId())) return new PV(u1 , u2);
+            if(id.equals(u2.getId())) return new PV(u1 , u2 , false);
 
         return null;
     }

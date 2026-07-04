@@ -11,12 +11,14 @@ public class PV extends Chat
     protected int numOfMessages;
 
     private boolean isDeleted;
+    private boolean isPinnedForFirst;
+    private boolean isPinnedForSecond;
 
     protected List<Message> messages;
 
     private PvRepository pvRepository;
 
-    public PV(User first , User second)
+    public PV(User first , User second , boolean isNew)
     {
         firstPerson = first;
         secondPerson = second;
@@ -28,6 +30,21 @@ public class PV extends Chat
         pvRepository = new PvRepository(this);
         this.messages = pvRepository.getArrayOfMessages();
         this.numOfMessages = this.messages.size();
+
+        if(!isNew)
+        {
+            InformationRepository firstInfo = new InformationRepository(firstPerson);
+            this.isPinnedForFirst = firstInfo.getPvIsPinned(this);
+
+            InformationRepository secondInfo = new InformationRepository(secondPerson);
+            this.isPinnedForSecond = secondInfo.getPvIsPinned(this);
+        }
+
+        else
+        {
+            isPinnedForFirst = false;
+            isPinnedForSecond = false;
+        }
     }
 
 
@@ -120,5 +137,10 @@ public class PV extends Chat
     public int getNumOfMessages(){ return numOfMessages; }
     public List<Message> messages() { return messages; }
     public boolean getIsDeleted() { return isDeleted; }
+    public boolean getIsPinnedForFirst() { return isPinnedForFirst; }
+    public boolean getIsPinnedForSecond() { return isPinnedForSecond; }
     public PvRepository getPvRepository(){ return pvRepository; }
+
+    public void setPinForFirst(boolean isPinned){ this.isPinnedForFirst = isPinned; }
+    public void setPinForSecond(boolean isPinned){ this.isPinnedForSecond = isPinned; }
 }
