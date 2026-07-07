@@ -8,6 +8,7 @@ public class Group extends Chat
 {
     private String id;
     private List<User> members;
+    private List<Boolean> isPin;
     private User owner;
     private List<Message> messages;
     private int numOfMessages;
@@ -32,20 +33,30 @@ public class Group extends Chat
         this.numOfMessages = 0;
 
         members = new ArrayList<>();
-        for(User m : mem)
+        for(int i=0 ; i<mem.length ; i++)
         {
-            members.add(m);
-
-            if(m == owner)
+            members.add(mem[i]);
+            
+            if(isNew)
             {
-                this.owner = m;
+                isPin.add(i , false);
+            }
+            else
+            {
+                InformationRepository info = new InformationRepository(mem[i]);
+                isPin.add(info.getGroupIsPinned(this));
+            }
+
+            if(mem[i] == owner)
+            {
+                this.owner = mem[i];
                 if(isNew)
                 {
-                    m.groupCreated();
+                    mem[i].groupCreated();
                 }
             }
 
-            m.addGroup(this);
+            mem[i].addGroup(this);
         }
 
         messages = new ArrayList<>();
@@ -150,8 +161,21 @@ public class Group extends Chat
     public String getId(){ return id; }
     public String getName(){ return name; }
     public List<User> getMembers() { return members; }
+    public List<Boolean> getIsPin() { return isPin; }
     public List<Message> getMessages() { return messages; }
     public User getOwner(){ return owner; }
 
     public void setName(String name) { this.name = name; }
+
+    public void setPinForMember(String memeberId , boolean pin)
+    {
+        for(int i=0 ; i<members.size() ; i++)
+        {
+            if(memeberId.equals(members.get(i).getId()))
+            {
+                isPin.set( i , pin);
+                return;
+            }
+        }
+    }
 }

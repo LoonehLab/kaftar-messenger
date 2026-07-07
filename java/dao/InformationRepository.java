@@ -26,32 +26,32 @@ public class InformationRepository
             File folder = new File(userDirectory);
             if(!folder.exists())
             {
-            folder.mkdirs();
+                folder.mkdirs();
             }
             File pvFile = new File(folder, "pv.txt");
             if(!pvFile.exists())
             {
-            pvFile.createNewFile();
+                pvFile.createNewFile();
             }
             File groupFile = new File(folder, "group.txt");
             if(!groupFile.exists())
             {
-            groupFile.createNewFile();
+                groupFile.createNewFile();
             }
             File avatarFile = new File(folder, "avatar.txt");
             if(!avatarFile.exists()) 
             { 
-            avatarFile.createNewFile(); 
+                avatarFile.createNewFile(); 
             }
             File bioFile = new File(folder, "bio.txt");
             if(!bioFile.exists())
             {
-            bioFile.createNewFile();
+                bioFile.createNewFile();
             }
             File contactFile = new File(folder, "contact.txt");
             if(!contactFile.exists())
             {
-            contactFile.createNewFile();
+                contactFile.createNewFile();
             }
         }
         catch(IOException e) 
@@ -85,11 +85,21 @@ public class InformationRepository
         File file = new File(userDirectory, "group.txt");
         try(FileWriter writer = new FileWriter(file, true))
         {
-            writer.write(group.getId()+"\n");
+            int index = -1;
+
+            for(int i=0 ; i<group.getMembers().size() ; i++)
+            {
+                if(group.getMembers().get(i).getId().equals(user.getId()))
+                {
+                    index = i;
+                }
+            }
+
+            writer.write(group.getId()+" , "+group.getIsPin().get(index)+"\n");
         }
         catch(IOException e) 
         {
-        e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
@@ -154,7 +164,7 @@ public class InformationRepository
         return ids;
     }
 
-    public List<Boolean> getPvIsPinned()
+    public List<Boolean> getListOfPvPinned()
     {
         List<Boolean> isPinned = new ArrayList<>();
         File file = new File(userDirectory, "pv.txt");
@@ -188,9 +198,10 @@ public class InformationRepository
             String line;
             while ((line = reader.readLine()) != null) 
             {
-                if(!line.isEmpty()) 
+                String[] parts = line.split(" , ");
+                if(!parts[0].isEmpty()) 
                 {
-                    ids.add(line.trim());
+                    ids.add(parts[0].trim());
                 }
             }
         }
@@ -201,6 +212,31 @@ public class InformationRepository
         }
 
         return ids;
+    }
+
+    public List<Boolean> getListOfGroupPinned()
+    {
+        List<Boolean> isPinned = new ArrayList<>();
+        File file = new File(userDirectory, "group.txt");
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        {
+            String line;
+            while ((line = reader.readLine()) != null) 
+            {
+                String[] parts = line.split(" , ");
+                if(!parts[1].isEmpty()) 
+                {
+                    isPinned.add(Boolean.parseBoolean(parts[1]));
+                }
+            }
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return isPinned;
     }
 
     public String getAvatar() {
@@ -284,23 +320,26 @@ public class InformationRepository
     public void removePv(PV pv)
     {
         List<String> ids = getPvIds();
+        List<Boolean> pin = getListOfPvPinned();
         
-        for(String p : ids)
+        for(int i=0 ; i<ids.size() ; i++)
         {
             if((pv.getFirstPerson().getId()).equals(user.getId()))
             {
-                if(p.equals(pv.getSecondPerson().getId()))
+                if(ids.get(i).equals(pv.getSecondPerson().getId()))
                 {
-                    ids.remove(p);
+                    ids.remove(ids.get(i));
+                    pin.remove(pin.get(i));
                     break;
                 }
             }
 
             if((pv.getSecondPerson().getId()).equals(user.getId()))
             {
-                if(p.equals(pv.getFirstPerson().getId()))
+                if(ids.get(i).equals(pv.getFirstPerson().getId()))
                 {
-                    ids.remove(p);
+                    ids.remove(ids.get(i));
+                    pin.remove(pin.get(i));
                     break;
                 }
             }
@@ -309,9 +348,9 @@ public class InformationRepository
         File file = new File(userDirectory, "pv.txt");
         try(FileWriter writer = new FileWriter(file , false))
         {
-            for(String v : ids)
+            for(int i=0 ; i<ids.size() ; i++)
             {
-                writer.write(v+"\n");
+                writer.write(ids.get(i)+" , "+pin.get(i)+"\n");
             }
         }
 
@@ -324,7 +363,7 @@ public class InformationRepository
     public void changePinPv(PV pv)
     {
         List<String> ids = getPvIds();
-        List<Boolean> pin = getPvIsPinned();
+        List<Boolean> pin = getListOfPvPinned();
 
         for(int i=0 ; i<ids.size() ; i++)
         {
@@ -387,12 +426,14 @@ public class InformationRepository
     public void removeGroup(Group group)
     {
         List<String> ids = getGroupIds();
+        List<Boolean> pin = getListOfGroupPinned();
         
-        for(String g : ids)
+        for(int i=0 ; i<ids.size() ; i++)
         {
-            if(g.equals(group.getId()))
+            if(ids.get(i).equals(group.getId()))
             {
-                ids.remove(g);
+                ids.remove(ids.get(i));
+                pin.remove(pin.get(i));
                 break;
             }
         }
@@ -400,9 +441,49 @@ public class InformationRepository
         File file = new File(userDirectory, "group.txt");
         try(FileWriter writer = new FileWriter(file , false))
         {
-            for(String v : ids)
+            for(int i=0 ; i<ids.size() ; i++)
             {
-                writer.write(v+"\n");
+                writer.write(ids.get(i)+" , "+pin.get(i)+"\n");
+            }
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public void changePinGroup(Group group)
+    {
+        List<String> ids = getGroupIds();
+        List<Boolean> pin = getListOfGroupPinned();
+
+        for(int i=0 ; i<ids.size() ; i++)
+        {
+            if((group.getId()).equals(ids.get(i)))
+            {
+                if(pin.get(i))
+                {
+                    group.setPinForMember(ids.get(i), false);
+                    pin.set(i, false);
+                    break;
+                }
+
+                else
+                {
+                    group.setPinForMember(ids.get(i), true);
+                    pin.set(i, true);
+                    break;
+                }
+            }
+        }
+
+        File file = new File(userDirectory, "group.txt");
+        try(FileWriter writer = new FileWriter(file , false))
+        {
+            for(int i=0 ; i<ids.size() ; i++)
+            {
+                writer.write(ids.get(i)+" , "+pin.get(i)+"\n");
             }
         }
 
@@ -466,6 +547,34 @@ public class InformationRepository
                     {
                         return Boolean.parseBoolean(parts[1]);
                     }
+                }
+            }
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    public boolean getGroupIsPinned(Group group)
+    {
+        File file = new File(userDirectory, "group.txt");
+
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        {
+            String line;
+
+            while((line = reader.readLine()) != null)
+            {
+                String[] parts = line.split(" , ");
+
+                if(group.getId().equals(parts[0]))
+                {
+                    
+                    return Boolean.parseBoolean(parts[1]);
                 }
             }
         }
