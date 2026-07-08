@@ -135,6 +135,14 @@ public class Group extends Chat
 
     public void leftOrRemove(User user)
     {
+        for(int i=0 ; i<members.size() ; i++)
+        {
+           if(members.get(i).getId().equals(user.getId())) 
+           {
+                isPin.remove(i);
+           }
+        }
+
         members.remove(user);
         user.removeGroup(this);
     }
@@ -153,6 +161,7 @@ public class Group extends Chat
     public void addMember(User user)
     {
         members.add(user);
+        isPin.add(false);
         groupRepository.addMember(user);
     }
 
