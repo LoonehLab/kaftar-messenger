@@ -95,7 +95,13 @@ public class InformationRepository
                 }
             }
 
+            if(index != -1)
             writer.write(group.getId()+" , "+group.getIsPin().get(index)+"\n");
+
+            else
+            {
+                writer.write(group.getId()+" , "+false+"\n");
+            }
         }
         catch(IOException e) 
         {

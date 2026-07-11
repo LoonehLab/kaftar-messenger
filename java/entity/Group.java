@@ -32,7 +32,9 @@ public class Group extends Chat
         this.name = name;
         this.numOfMessages = 0;
 
+        isPin = new ArrayList<>();
         members = new ArrayList<>();
+
         for(int i=0 ; i<mem.length ; i++)
         {
             members.add(mem[i]);
@@ -47,7 +49,7 @@ public class Group extends Chat
                 isPin.add(info.getGroupIsPinned(this));
             }
 
-            if(mem[i] == owner)
+            if(mem[i].getId().equals(owner.getId()))
             {
                 this.owner = mem[i];
                 if(isNew)
