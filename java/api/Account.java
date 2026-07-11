@@ -5,6 +5,7 @@ import dao.*;
 import entity.*;
 
 import java.util.List;
+import java.util.Map;
 
 import com.sun.net.httpserver.HttpServer;
 
@@ -12,7 +13,10 @@ public class Account {
 
     private static final UserRepository userRepo = UserRepository.getInstance();
     private static final AllGroupsRepository groupRepo = AllGroupsRepository.getInstance();
-    
+
+    private static final Map<String,Integer> loginAttempts = new java.util.HashMap<>();
+    private static final Map<String,Long> lockTimeouts = new java.util.HashMap<>();
+
     public static void login(HttpServer server){
         server.createContext("/api/login", exchange -> {
             Core.handleCORS(exchange);
@@ -32,11 +36,28 @@ public class Account {
                 }
 
                 if (existingUser != null) { // Login
+                    String username = existingUser.getUserName();
+                    if (lockTimeouts.containsKey(username) && System.currentTimeMillis() < lockTimeouts.get(username)) {
+                        long timeLeft = (lockTimeouts.get(username) - System.currentTimeMillis()) / 1000;
+                        Core.sendResponse(exchange, 403, String.format("{\"error\":\"Account locked. Try again in %d seconds\"}", timeLeft));
+                        return;
+                    }
                     String hashedPass = PasswordHasher.hashPassword(pass);
-                    if (existingUser.getPassword().equals(hashedPass))
+                    if (existingUser.getPassword().equals(hashedPass)) {
+                        loginAttempts.remove(username);
+                        lockTimeouts.remove(username);
                         Core.sendResponse(exchange, 200, String.format("{\"status\":\"success\",\"message\":\"Login successful\",\"id\":\"%s\"}", existingUser.getId()));
-                    else 
-                        Core.sendResponse(exchange, 401, "{\"error\":\"Wrong password\"}");
+                    }
+                    else { 
+                        int attempts = loginAttempts.getOrDefault(username, 0)+1;
+                        loginAttempts.put(username, attempts);
+                        if (attempts >= 5) {
+                            lockTimeouts.put(username, System.currentTimeMillis() + 900000); // Ye rob Gap
+                            loginAttempts.put(username, 0);
+                            Core.sendResponse(exchange, 403, "{\"error\":\"Too many failed attempts. Account locked.\"}");
+                        }
+                        else Core.sendResponse(exchange, 401, String.format("{\"error\":\"Wrong password. %d attempts remaining.\"}", 5 - attempts));
+                    }
                 }
                 else { // SignUp
                     if (user.isEmpty() || fullName.isEmpty() || pass.isEmpty()) {
@@ -54,6 +75,46 @@ public class Account {
                 }
             }
             else Core.sendResponse(exchange, 405, "Method Not Allowed");
+        });
+    }
+
+    public static void recoverPassword(HttpServer server) {
+        server.createContext("/api/user/recover", exchange -> {
+            Core.handleCORS(exchange);
+            if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) return;
+            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String body = Core.getRequestBody(exchange);
+                String username = Core.extractJsonValue(body, "user"); 
+                String newPass = Core.extractJsonValue(body, "newPass");
+                if (username.isEmpty() || newPass.isEmpty()) {
+                    Core.sendResponse(exchange, 400, "{\"error\":\"Missing username or new password\"}");
+                    return;
+                }
+                User user = userRepo.findUserByAnyField(username, "");
+                if (user == null) {
+                    Core.sendResponse(exchange, 404, "{\"error\":\"User not found\"}");
+                    return;
+                }
+                String hashedPass = PasswordHasher.hashPassword(newPass);
+                List<User> allUsers = userRepo.getAllUsers();
+                try (java.io.FileWriter writer = new java.io.FileWriter(".." + java.io.File.separator + "data" + java.io.File.separator + "users.txt", false)) {
+                    for (User u : allUsers) {
+                        String passwordToSave = u.getUserName().equalsIgnoreCase(username) ? hashedPass : u.getPassword();
+                        writer.write(u.getId() + " , " + u.getUserName() + " , " + u.getFullName() + " , " + passwordToSave + "\n");
+                    }
+                }
+                catch (java.io.IOException e) {
+                    e.printStackTrace();
+                    Core.sendResponse(exchange, 500, "{\"error\":\"Database error\"}");
+                    return;
+                }
+                loginAttempts.remove(username);
+                lockTimeouts.remove(username);
+                Core.sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Password updated successfully\"}");
+            }
+            else {
+                Core.sendResponse(exchange, 405, "Method Not Allowed");
+            }
         });
     }
 

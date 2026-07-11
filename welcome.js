@@ -12,9 +12,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const switchToSignup = document.getElementById("switchToSignup");
     const switchToLogin = document.getElementById("switchToLogin");
 
+    const recoverForm = document.getElementById("recoverForm");
+    const switchToRecover = document.getElementById("switchToRecover");
+    const recoverToLogin = document.getElementById("recoverToLogin");
+
     const API_BASE_URL = 'http://localhost:8081/api';
 
-    if (!modal || !openLoginModal || !openSignupModal || !closeAuthModal || !loginForm || !signupForm || !switchToSignup || !switchToLogin) {
+    if (!modal || !openLoginModal || !openSignupModal || !closeAuthModal || !loginForm || !signupForm || !switchToSignup || !switchToLogin || !recoverForm || !switchToRecover || !recoverToLogin) {
         console.error("Some modal elements were not found.");
         return;
     }
@@ -23,17 +27,36 @@ document.addEventListener("DOMContentLoaded", () => {
         modal.classList.add("active");
         loginForm.classList.add("active");
         signupForm.classList.remove("active");
+        if (recoverForm) recoverForm.classList.remove("active");
     }
 
     function showSignup() {
         modal.classList.add("active");
         signupForm.classList.add("active");
         loginForm.classList.remove("active");
+        recoverForm.classList.remove("active");
+    }
+
+    function showRecover() {
+        modal.classList.add("active");
+        recoverForm.classList.add("active");
+        loginForm.classList.remove("active");
+        signupForm.classList.remove("active");
     }
 
     function closeModal() {
         modal.classList.remove("active");
     }
+
+    switchToRecover.addEventListener("click", (event) => {
+        event.preventDefault();
+        showRecover();
+    });
+
+    recoverToLogin.addEventListener("click", (event) => {
+        event.preventDefault();
+        showLogin();
+    });
 
     openLoginModal.addEventListener("click", (event) => {
         event.preventDefault();
@@ -47,6 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     closeAuthModal.addEventListener("click", closeModal);
     switchToSignup.addEventListener("click", showSignup);
+    switchToRecover.addEventListener("click", showRecover);
     switchToLogin.addEventListener("click", showLogin);
 
     modal.addEventListener("click", (event) => {
@@ -133,6 +157,36 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         } catch (error) {
             console.error("Error during sign up:", error);
+        }
+    });
+
+    recoverForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const username = document.getElementById("recoverUserId").value.trim();
+        const newPassword = document.getElementById("recoverNewPassword").value.trim();
+        if (!username || !newPassword) {
+            alert("Please fill in all fields.");
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE_URL}/user/recover`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user: username,
+                    newPass: newPassword
+                })
+            });
+            if (response.status === 200) {
+                alert("Password updated successfully! You can now login.");
+                showLogin();
+            } else {
+                const data = await response.json();
+                alert(data.error || "Failed to update password.");
+            }
+        } catch (error) {
+            console.error("Error during password recovery:", error);
+            alert("Could not connect to server.");
         }
     });
 });

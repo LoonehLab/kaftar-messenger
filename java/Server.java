@@ -10,6 +10,7 @@ public class Server {
         HttpServer server = HttpServer.create(new InetSocketAddress(8081), 0);
 
         Account.login(server);
+        Account.recoverPassword(server);
         Account.load(server);
         Account.avatar(server);
         Account.search(server);

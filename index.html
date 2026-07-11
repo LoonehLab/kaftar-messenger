@@ -68,6 +68,10 @@
         <input type="password" id="loginPassword" placeholder="Password">
     </div>
 
+    <span class="switch-auth-text">
+        <button type="button" id="switchToRecover">Forgot Password?</button>
+    </span>
+
     <button type="submit" class="auth-submit-btn">Login</button>
 
     <span class="switch-auth-text">
@@ -110,6 +114,28 @@
         Already have an account?
         <button type="button" id="switchToLogin">Login</button>
     </span>
+    </form>
+
+    <form class="auth-form" id="recoverForm">
+        <h2>Recover Password</h2>
+        <p>Enter your username and new password</p>
+
+        <div class="auth-input-group">
+            <i class="fas fa-id-card"></i>
+            <input type="text" id="recoverUserId" placeholder="User ID">
+        </div>
+
+        <div class="auth-input-group">
+            <i class="fas fa-lock"></i>
+            <input type="password" id="recoverNewPassword" placeholder="New Password">
+        </div>
+
+        <button type="submit" class="auth-submit-btn">Change Password</button>
+
+        <span class="switch-auth-text">
+            Remember your password?
+            <button type="button" id="recoverToLogin">Login</button>
+        </span>
     </form>
 
 
