@@ -2,9 +2,8 @@ package entity;
 
 public class SavedMessage extends PV
 {
-   public SavedMessage(User first , User second) 
-   {
-      super(first, second , true);
+   public SavedMessage(User first , User second) {
+      super(first, second );
    } 
 
    @Override

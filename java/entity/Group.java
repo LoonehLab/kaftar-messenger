@@ -8,7 +8,6 @@ public class Group extends Chat
 {
     private String id;
     private List<User> members;
-    private List<Boolean> isPin;
     private User owner;
     private List<Message> messages;
     private int numOfMessages;
@@ -32,33 +31,21 @@ public class Group extends Chat
         this.name = name;
         this.numOfMessages = 0;
 
-        isPin = new ArrayList<>();
         members = new ArrayList<>();
-
-        for(int i=0 ; i<mem.length ; i++)
+        for(User m : mem)
         {
-            members.add(mem[i]);
-            
-            if(isNew)
-            {
-                isPin.add(i , false);
-            }
-            else
-            {
-                InformationRepository info = new InformationRepository(mem[i]);
-                isPin.add(info.getGroupIsPinned(this));
-            }
+            members.add(m);
 
-            if(mem[i].getId().equals(owner.getId()))
+            if(m == owner)
             {
-                this.owner = mem[i];
+                this.owner = m;
                 if(isNew)
                 {
-                    mem[i].groupCreated();
+                    m.groupCreated();
                 }
             }
 
-            mem[i].addGroup(this);
+            m.addGroup(this);
         }
 
         messages = new ArrayList<>();
@@ -137,14 +124,6 @@ public class Group extends Chat
 
     public void leftOrRemove(User user)
     {
-        for(int i=0 ; i<members.size() ; i++)
-        {
-           if(members.get(i).getId().equals(user.getId())) 
-           {
-                isPin.remove(i);
-           }
-        }
-
         members.remove(user);
         user.removeGroup(this);
     }
@@ -163,7 +142,6 @@ public class Group extends Chat
     public void addMember(User user)
     {
         members.add(user);
-        isPin.add(false);
         groupRepository.addMember(user);
     }
 
@@ -172,21 +150,8 @@ public class Group extends Chat
     public String getId(){ return id; }
     public String getName(){ return name; }
     public List<User> getMembers() { return members; }
-    public List<Boolean> getIsPin() { return isPin; }
     public List<Message> getMessages() { return messages; }
     public User getOwner(){ return owner; }
 
     public void setName(String name) { this.name = name; }
-
-    public void setPinForMember(String memeberId , boolean pin)
-    {
-        for(int i=0 ; i<members.size() ; i++)
-        {
-            if(memeberId.equals(members.get(i).getId()))
-            {
-                isPin.set( i , pin);
-                return;
-            }
-        }
-    }
 }
