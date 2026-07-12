@@ -67,11 +67,11 @@ public class InformationRepository
         {
             if(pv.getFirstPerson() == user)
             {
-                writer.write(pv.getSecondPerson().getId()+"\n");
+                writer.write(pv.getSecondPerson().getId()+":normal\n");
             }
             else if(pv.getSecondPerson() == user)
             {
-                writer.write(pv.getFirstPerson().getId()+"\n");
+                writer.write(pv.getFirstPerson().getId()+":normal\n");
             }
         }
         catch(IOException e) 
@@ -85,7 +85,7 @@ public class InformationRepository
         File file = new File(userDirectory, "group.txt");
         try(FileWriter writer = new FileWriter(file, true))
         {
-            writer.write(group.getId()+"\n");
+            writer.write(group.getId()+":normal\n");
         }
         catch(IOException e) 
         {
@@ -130,7 +130,7 @@ public class InformationRepository
     }
 
     public void saveChatState(String chatId, String type, String state) {
-        String fileName = "pv".equalsIgnoreCase(type) ? "pv_states.txt" : "group_states.txt";
+        String fileName = "pv".equalsIgnoreCase(type) ? "pv.txt" : "group.txt";
         File file = new File(userDirectory, fileName);
         List<String> lines = new ArrayList<>();
         boolean found = false;
@@ -141,8 +141,9 @@ public class InformationRepository
                     if (line.startsWith(chatId + ":")) {
                         lines.add(chatId + ":" + state);
                         found = true;
+                    } else if (!line.isEmpty()) {
+                        lines.add(line);
                     }
-                    else if (!line.isEmpty()) lines.add(line);
                 }
             }
             catch (IOException e) {
@@ -152,14 +153,14 @@ public class InformationRepository
         if (!found) lines.add(chatId + ":" + state);
         try (FileWriter writer = new FileWriter(file, false)) {
             for (String l : lines) writer.write(l + "\n");
-        }
+            }
         catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public String getChatState(String chatId, String type) {
-        String fileName = "pv".equalsIgnoreCase(type) ? "pv_states.txt" : "group_states.txt";
+        String fileName = "pv".equalsIgnoreCase(type) ? "pv.txt" : "group.txt";
         File file = new File(userDirectory, fileName);
         if (!file.exists()) return "normal";
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
@@ -167,7 +168,7 @@ public class InformationRepository
             while ((line = reader.readLine()) != null)
                 if (line.startsWith(chatId + ":"))
                     return line.split(":")[1].trim();
-        }
+                }
         catch (IOException e) {
             e.printStackTrace();
         }
@@ -185,7 +186,7 @@ public class InformationRepository
             {
                 if(!line.isEmpty()) 
                 {
-                    ids.add(line.trim());
+                    ids.add(line.split(":")[0].trim());
                 }
             }
         }
@@ -209,7 +210,7 @@ public class InformationRepository
             {
                 if(!line.isEmpty()) 
                 {
-                    ids.add(line.trim());
+                    ids.add(line.split(":")[0].trim());
                 }
             }
         }
@@ -302,33 +303,29 @@ public class InformationRepository
 
     public void removePv(PV pv)
     {
-        List<String> ids = getPvIds();
-        
-        for(String p : ids)
-        {
-            if((pv.getFirstPerson().getId()).equals(user.getId()))
-            {
-                if(p.equals(pv.getSecondPerson().getId()))
-                {
-                    ids.remove(p);
-                    break;
-                }
-            }
+        String targetId = (pv.getFirstPerson().getId()).equals(user.getId()) ? pv.getSecondPerson().getId() : pv.getFirstPerson().getId();
+        File file = new File(userDirectory, "pv.txt");
+        List<String> lines = new ArrayList<>();
 
-            if((pv.getSecondPerson().getId()).equals(user.getId()))
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        {
+            String line;
+            while ((line = reader.readLine()) != null)
             {
-                if(p.equals(pv.getFirstPerson().getId()))
+                if (!line.startsWith(targetId + ":") && !line.isEmpty())
                 {
-                    ids.remove(p);
-                    break;
+                    lines.add(line);
                 }
             }
         }
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
 
-        File file = new File(userDirectory, "pv.txt");
         try(FileWriter writer = new FileWriter(file , false))
         {
-            for(String v : ids)
+            for(String v : lines)
             {
                 writer.write(v+"\n");
             }
@@ -342,26 +339,32 @@ public class InformationRepository
 
     public void removeGroup(Group group)
     {
-        List<String> ids = getGroupIds();
-        
-        for(String g : ids)
+        File file = new File(userDirectory, "group.txt");
+        List<String> lines = new ArrayList<>();
+
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
-            if(g.equals(group.getId()))
+            String line;
+            while ((line = reader.readLine()) != null)
             {
-                ids.remove(g);
-                break;
+                if (!line.startsWith(group.getId() + ":") && !line.isEmpty())
+                {
+                    lines.add(line);
+                }
             }
         }
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
 
-        File file = new File(userDirectory, "group.txt");
         try(FileWriter writer = new FileWriter(file , false))
         {
-            for(String v : ids)
+            for(String v : lines)
             {
                 writer.write(v+"\n");
             }
         }
-
         catch(IOException e)
         {
             e.printStackTrace();
