@@ -148,22 +148,25 @@ public class Account {
                     if(target == null) continue;
                     String targetAvatar = target.getInformationRepository().getAvatar();
                     if(targetAvatar == null) targetAvatar = "";
-                    json.append(String.format("{\"targetId\":\"%s\",\"targetName\":\"%s\",\"profilePicture\":\"%s\"}", 
-                        target.getId(), target.getUserName(), targetAvatar));
+                    String pvState = currentUser.getInformationRepository().getChatState(target.getId(), "pv");
+                    json.append(String.format("{\"targetId\":\"%s\",\"targetName\":\"%s\",\"profilePicture\":\"%s\",\"state\":\"%s\"}", 
+                        target.getId(), target.getUserName(), targetAvatar, pvState));
                     if(i < pvIds.size()-1) json.append(",");
                 }
                 json.append("],");
 
                 // Group Chats
                 json.append("\"groups\":[");
-                List<String> groupIds =currentUser.getInformationRepository().getGroupIds();
+                List<String> groupIds = currentUser.getInformationRepository().getGroupIds();
                 boolean first = true;
                 for(String groupId : groupIds) {
                     Group g = groupRepo.findById(groupId);
                     if(g == null) continue;
                     if(!first) json.append(",");
                     first = false;
-                    json.append( String.format( "{\"groupId\":\"%s\",\"groupName\":\"%s\"}", g.getId(), g.getName()));
+                    String groupState = currentUser.getInformationRepository().getChatState(g.getId(), "group");
+                    json.append(String.format("{\"groupId\":\"%s\",\"groupName\":\"%s\",\"state\":\"%s\"}", 
+                        g.getId(), g.getName(), groupState));
                 }
                 json.append("]");
                 json.append("}");

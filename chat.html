@@ -23,6 +23,13 @@
                 </button>
             </div>
 
+            <div id="archivedFolderHeader" style="display: none; align-items: center; padding: 10px 15px; border-bottom: 1px solid var(--border-light); background-color: rgba(0,0,0,0.1);">
+                <button id="archiveBackBtn" style="background: none; border: none; color: var(--text-main); font-size: 16px; cursor: pointer; margin-right: 12px;">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <span style="font-weight: 600; font-size: 14px; color: var(--text-white);">Archived Chats</span>
+            </div>
+
             <div class="chatroom-list"></div> <!-- Designed in JavaScript -->
             <button class="fab-add-btn" id="openContactsBtn">
                 <i class="fas fa-plus"></i>
@@ -142,7 +149,8 @@
     </div>
 
     <div id="headerSettingsMenu" class="context-menu" style="display: none; position: absolute; z-index: 2000;">
-        <button id="headerViewProfileBtn"><i class="fas fa-info-circle"></i> Profile </button>
+        <button id="headerViewProfileBtn"><i class="fas fa-info-circle"></i> Profile</button>
+        <div id="dynamicHeaderSettingsActions"></div> <!-- Designed in JavaScript -->
     </div>
 
     <script src="script.js"></script>

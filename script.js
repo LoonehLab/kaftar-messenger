@@ -30,6 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const messagesContainer = document.querySelector('.messages-container');
     const appContainer = document.querySelector('.app-container');
 
+    let isViewingArchive = false;
+    const archivedFolderHeader = document.getElementById('archivedFolderHeader');
+    const archiveBackBtn = document.getElementById('archiveBackBtn');
+
     const API_BASE_URL = 'http://localhost:8081/api';
     
     let CURRENT_USER_ID = localStorage.getItem("CURRENT_USER_ID");
@@ -73,6 +77,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (backBtn) {
         backBtn.addEventListener('click', () => {
             appContainer.classList.remove('chat-open');
+        });
+    }
+
+    // =============( Archive Folder Back )=============
+    if (archiveBackBtn) {
+        archiveBackBtn.addEventListener('click', () => {
+            isViewingArchive = false;
+            archivedFolderHeader.style.display = 'none';
+            LoadChatrooms({ preserveActive: true });
         });
     }
 
@@ -127,7 +140,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // =============( User Data and Chats )=============
     async function LoadChatrooms(options = {}) {
-        const { preserveActive = false, selectTargetId = null, selectType = null } = options;
         try {
             const res = await fetch(`${API_BASE_URL}/user/init?userId=${CURRENT_USER_ID}`);
             const userData = await res.json();
@@ -147,16 +159,42 @@ document.addEventListener('DOMContentLoaded', () => {
             const resolvedPvs = await Promise.all(
                 (userData.pvs || []).map(async (pv) => ({
                     ...pv,
-                    displayName: await resolvePvDisplayName(pv.targetId, pv.targetName)
+                    id: pv.targetId,
+                    name: await resolvePvDisplayName(pv.targetId, pv.targetName),
+                    type: 'pv',
+                    profilePicture: pv.profilePicture || null,
+                    isArchived: pv.chatState === 'archived' || pv.state === 'archived', 
+                    isPinned: pv.chatState === 'pinned' || pv.state === 'pinned'
                 }))
             );
 
-            resolvedPvs.forEach(pv => {
-                createChatroomItemHTML(pv.targetId, pv.displayName, 'pv', pv.profilePicture || null);
+            const groupsList = (userData.groups || []).map(group => ({
+                id: group.groupId,
+                name: group.groupName,
+                type: 'group',
+                profilePicture: null,
+                isArchived: group.chatState === 'archived' || group.state === 'archived',
+                isPinned: group.chatState === 'pinned' || group.state === 'pinned'
+            }));
+
+            const allRooms = [...resolvedPvs, ...groupsList];
+
+            if (!isViewingArchive) { // Render Archive Item
+                createArchiveFolderItemHTML();
+            }
+
+            const filteredRooms = allRooms.filter(room => { // Filter Archives
+                if (isViewingArchive) {
+                    return room.isArchived;
+                } else {
+                    return !room.isArchived;
+                }
             });
 
-            (userData.groups || []).forEach(group => {
-                createChatroomItemHTML(group.groupId, group.groupName, 'group', null);
+            filteredRooms.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0)); // Show pinned first
+
+            filteredRooms.forEach(room => {
+                createChatroomItemHTML(room.id, room.name, room.type, room.profilePicture, room.isPinned);
             });
 
             let itemToActivate = null;
@@ -168,8 +206,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 itemToActivate = chatroomListContainer.querySelector(
                     `.chatroom-item[data-target-id="${activeChat.targetId}"][data-type="${activeChat.type}"]`
                 );
-            } else if (!preserveActive && !selectTargetId && !activeChat.targetId) {
-                itemToActivate = chatroomListContainer.querySelector('.chatroom-item');
             }
 
             if (itemToActivate) {
@@ -187,7 +223,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     loadMessages();
                     setupAutoUpdate();
                 }
-            } else if (!chatroomListContainer.querySelector('.chatroom-item')) {
+            } else if (filteredRooms.length === 0 && isViewingArchive) {
+                chatroomListContainer.innerHTML += `
+                    <div style="padding: 20px; text-align: center; opacity: 0.5; font-size: 14px;">
+                        No archived chats found
+                    </div>
+                `;
+            } else if (!chatroomListContainer.querySelector('.chatroom-item') && !isViewingArchive) {
                 messagesContainer.innerHTML = `
                     <div class="chat-empty-state">
                         <div class="empty-state-bubble">
@@ -203,18 +245,50 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // =============( Render Archive Folder Row Button )=============
+    function createArchiveFolderItemHTML() {
+        const itemDiv = document.createElement('div');
+        itemDiv.classList.add('chatroom-item', 'archive-folder-row');
+        itemDiv.style.borderBottom = '1px dashed var(--border-light)';
+        itemDiv.style.marginBottom = '12px';
+        
+        itemDiv.innerHTML = `
+            <div class="room-info">
+                <div class="room-avatar" style="background: linear-gradient(135deg, #64748b, #475569)">
+                    <i class="fas fa-archive" style="color: white; font-size: 16px;"></i>
+                </div>
+                <span class="room-name" style="font-weight: 600;">Archived Chats</span>
+            </div>
+            <i class="fas fa-chevron-right" style="color: var(--icon-mute); font-size: 12px; padding-right: 5px;"></i>
+        `;
+        
+        itemDiv.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isViewingArchive = true;
+            archivedFolderHeader.style.display = 'flex';
+            LoadChatrooms();
+        });
+        
+        chatroomListContainer.appendChild(itemDiv);
+    }
+
     // =============( Create Chatroom )=============
-    function createChatroomItemHTML(id, name, type, avatarBase64 = null) {
+    function createChatroomItemHTML(id, name, type, avatarBase64 = null, isPinned = false) {
         const itemDiv = document.createElement('div');
         itemDiv.classList.add('chatroom-item');
         itemDiv.setAttribute('data-type', type);
         itemDiv.setAttribute('data-target-id', id);
+        const pinIconHTML = isPinned ? `<i class="fas fa-thumbtack pin-icon" style="color: var(--cyan-aqua); font-size: 12px; margin-left: 8px;"></i>` : '';
+        
         itemDiv.innerHTML = `
             <div class="room-info">
                 <div class="room-avatar">${getAvatarHTML(name, avatarBase64)}</div>
                 <span class="room-name">${name}</span>
             </div>
-            <i class="fas fa-ellipsis-v options-icon"></i>
+            <div class="item-actions-wrapper" style="display: flex; align-items: center; gap: 8px;">
+                ${pinIconHTML}
+                <i class="fas fa-ellipsis-v options-icon"></i>
+            </div>
         `;
         
         itemDiv.addEventListener('click', () => { 
@@ -619,14 +693,116 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // =============( Settings modal )=============
     if (gearIcon) {
-        gearIcon.addEventListener('click', (e) => {
+        gearIcon.addEventListener('click', async (e) => {
             e.stopPropagation();
             if (!activeChat.targetId) return;
+            const currentItem = chatroomListContainer.querySelector( // Current State
+                `.chatroom-item[data-target-id="${activeChat.targetId}"][data-type="${activeChat.type}"]`
+            );
+            const isPinned = currentItem ? !!currentItem.querySelector('.pin-icon') : false;
+            const isArchived = isViewingArchive; 
+
+            const dynamicActionsContainer = document.getElementById('dynamicHeaderSettingsActions');
+            if (dynamicActionsContainer) {
+                dynamicActionsContainer.innerHTML = '';
+                const pinBtn = document.createElement('button'); // Pin | Archive Buttons
+                pinBtn.innerHTML = isPinned 
+                    ? `<i class="fas fa-thumbtack"></i> Unpin Chat` 
+                    : `<i class="fas fa-thumbtack"></i> Pin Chat`;
+                pinBtn.addEventListener('click', async () => {
+                    const action = isPinned ? 'unpin' : 'pin';
+                    await handleChatStateChange(activeChat.targetId, activeChat.type, action);
+                });
+                dynamicActionsContainer.appendChild(pinBtn);
+                const archiveBtn = document.createElement('button');
+                archiveBtn.innerHTML = isArchived 
+                    ? `<i class="fas fa-file-archive"></i> Remove from Archive` 
+                    : `<i class="fas fa-archive"></i> Add to Archive`;
+                archiveBtn.addEventListener('click', async () => {
+                    const action = isArchived ? 'unarchive' : 'archive';
+                    await handleChatStateChange(activeChat.targetId, activeChat.type, action);
+                });
+                dynamicActionsContainer.appendChild(archiveBtn);
+
+                if (activeChat.type === 'pv') { // Contact Buttons
+                    const contactBtn = document.createElement('button');
+                    const isContact = await checkIsContact(activeChat.targetId);
+
+                    contactBtn.innerHTML = isContact 
+                        ? `<i class="fas fa-user-minus"></i> Remove from Contact` 
+                        : `<i class="fas fa-user-plus"></i> Add to Contact`;
+                    
+                    contactBtn.addEventListener('click', async () => {
+                        const action = isContact ? 'remove' : 'add';
+                        await handleContactChange(activeChat.targetId, action);
+                    });
+                    dynamicActionsContainer.appendChild(contactBtn);
+                }
+            }
             headerSettingsMenu.style.display = 'block';
-            const menuWidth = headerSettingsMenu.offsetWidth || 130;
+            const menuWidth = headerSettingsMenu.offsetWidth || 160;
             headerSettingsMenu.style.left = `${e.pageX - menuWidth}px`;
             headerSettingsMenu.style.top = `${e.pageY + 10}px`;
         });
+    }
+
+    async function handleChatStateChange(chatId, type, action) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/chatroom/state`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: CURRENT_USER_ID,
+                    chatId: chatId,
+                    type: type,
+                    action: action
+                })
+            });
+            if (response.ok) {
+                if (headerSettingsMenu) headerSettingsMenu.style.display = 'none';
+                await LoadChatrooms({ preserveActive: true });
+            } else {
+                console.error("Failed to update chat room setting state workflow.");
+            }
+        } catch (error) {
+            console.error("Error setting dynamic room parameters:", error);
+        }
+    }
+
+    async function checkIsContact(targetContactId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/contacts?userId=${CURRENT_USER_ID}`);
+            if (response.ok) {
+                const contacts = await response.json();
+                return contacts.some(contact => contact.userId === targetContactId);
+            }
+        } catch (err) {
+            console.error("Error fetching contact verification metrics:", err);
+        }
+        return false;
+    }
+
+    async function handleContactChange(contactId, action) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/contacts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: action,
+                    userId: CURRENT_USER_ID,
+                    contactId: contactId
+                })
+            });
+            if (response.ok) {
+                alert(`Contact successfully updated! Action: ${action}`);
+                if (headerSettingsMenu) headerSettingsMenu.style.display = 'none';
+            } else {
+                const errorData = await response.json();
+                alert(`Error: ${errorData.error || 'Failed to modify contacts list.'}`);
+            }
+        } catch (error) {
+            console.error("Network context error modifying contact parameters:", error);
+        }
     }
 
     document.addEventListener('click', () => {

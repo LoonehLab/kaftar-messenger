@@ -15,6 +15,7 @@ public class Server {
         Account.avatar(server);
         Account.search(server);
         Info.load(server);
+        Chatroom.setState(server);
         Chatroom.loadPV(server);
         Chatroom.loadGroup(server);
         Contacts.Manage(server);

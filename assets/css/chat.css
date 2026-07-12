@@ -145,6 +145,20 @@ body {
     background-color: var(--border-light);
 }
 
+.archive-folder-row:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.pin-icon {
+    animation: pulsePin 2s infinite ease-in-out;
+}
+
+@keyframes pulsePin {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; filter: drop-shadow(0 0 2px var(--cyan-aqua)); }
+    100% { opacity: 0.7; }
+}
+
 .room-info {
     display: flex;
     align-items: center;

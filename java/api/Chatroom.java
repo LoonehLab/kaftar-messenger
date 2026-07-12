@@ -160,4 +160,45 @@ public class Chatroom {
             }
         });
     }
+
+    public static void setState(HttpServer server) {
+        server.createContext("/api/chatroom/state", exchange -> {
+            Core.handleCORS(exchange);
+            if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) return;
+            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String body = Core.getRequestBody(exchange);
+                String userId = Core.extractJsonValue(body, "userId");
+                String chatId = Core.extractJsonValue(body, "chatId");
+                String type = Core.extractJsonValue(body, "type");
+                String action = Core.extractJsonValue(body, "action");
+                User user = userRepo.findUserById(userId);
+                if (user == null) {
+                    Core.sendResponse(exchange, 404, "{\"error\":\"User not found\"}");
+                    return;
+                }
+                Chat targetChat = null;
+                if ("pv".equalsIgnoreCase(type)) {
+                    User receiver = userRepo.findUserById(chatId);
+                    if (receiver != null) targetChat = Core.findOrCreatePV(user, receiver);
+                }
+                else if ("group".equalsIgnoreCase(type)) targetChat = Core.findGroupById(chatId);
+                if (targetChat == null) {
+                    Core.sendResponse(exchange, 404, "{\"error\":\"Chat room not found\"}");
+                    return;
+                }
+                String newState = "normal";
+                if ("pin".equalsIgnoreCase(action)) newState = "pinned";
+                else if ("archive".equalsIgnoreCase(action)) newState = "archived";
+                else if ("unpin".equalsIgnoreCase(action) || "unarchive".equalsIgnoreCase(action)) newState = "normal";
+                else {
+                    Core.sendResponse(exchange, 400, "{\"error\":\"Invalid action. Choose pin, unpin, archive, or unarchive.\"}");
+                    return;
+                }
+                targetChat.setChatState(user, type, chatId, newState);
+                Core.sendResponse(exchange, 200, String.format(
+                    "{\"status\":\"success\",\"message\":\"Chat status updated to %s successfully\"}", newState));
+            }
+            else Core.sendResponse(exchange, 405, "Method Not Allowed");
+        });
+    }
 }
