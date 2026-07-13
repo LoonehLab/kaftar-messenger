@@ -405,13 +405,13 @@ public class GroupRepository
 
     public void editMessage(String newText , Message message)
     {
+        addEditedMessage(message);
         List<Message> messages = getArrayOfMessages();
 
         for(int i=0 ; i<messages.size() ; i++)
         {
             if(message.getId() == (messages.get(i).getId()))
             {
-                addEditedMessage(message);
                 messages.get(i).setText(newText);
                 messages.get(i).setEdited(true);
                 break;
