@@ -173,14 +173,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 }))
             );
 
-            const groupsList = (userData.groups || []).map(group => ({
-                id: group.groupId,
-                name: group.groupName,
-                type: 'group',
-                profilePicture: null,
-                isArchived: group.chatState === 'archived' || group.state === 'archived',
-                isPinned: group.chatState === 'pinned' || group.state === 'pinned'
-            }));
+            const groupsList = await Promise.all(
+                (userData.groups || []).map(async (group) => {
+                    let picture = group.groupPicture || group.avatar || null;
+                    if (!picture) {
+                        try {
+                            const avatarRes = await fetch(`${API_BASE_URL}/group/avatar?groupId=${group.groupId}`);
+                            if (avatarRes.ok) {
+                                const avatarData = await avatarRes.json();
+                                picture = avatarData.groupPicture || null;
+                            }
+                        } catch (err) {
+                            console.error("Failed to fetch individual group avatar:", err);
+                        }
+                    }
+
+                    return {
+                        id: group.groupId,
+                        name: group.groupName,
+                        type: 'group',
+                        profilePicture: picture,
+                        isArchived: group.chatState === 'archived' || group.state === 'archived',
+                        isPinned: group.chatState === 'pinned' || group.state === 'pinned'
+                    };
+                })
+            );
 
             const allRooms = [...resolvedPvs, ...groupsList];
 
@@ -550,8 +567,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // =============( Profile Settings Modal )=============
     if (mainUserAvatar) {
-        mainUserAvatar.style.cursor = 'pointer';
         mainUserAvatar.addEventListener('click', async () => {
+            currentModalContext = { type: 'self', targetId: CURRENT_USER_ID };
             if (profileSettingsModal) {
                 profileSettingsModal.classList.add('active');
             }
@@ -591,31 +608,53 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert("Image is too large! Please select an image under 1MB.");
                 return;
             }
+            
             const reader = new FileReader();
             reader.onload = async function(e) {
                 const base64String = e.target.result;
-                const bodyData = {
-                    userId: CURRENT_USER_ID,
-                    profilePicture: base64String
-                };
-                try {
-                    const response = await fetch(`${API_BASE_URL}/user/avatar`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(bodyData)
-                    });
-                    if (response.ok) {
-                        alert('Avatar uploaded successfully!');
-                        const currentName = getFirstName(
-                            settingsFullName?.value,
-                            settingsUsername?.value || "Me"
-                        );
-                        updateMainUserAvatar(currentName, base64String);
-                    } else {
-                        alert('Failed to upload avatar. Status: ' + response.status);
+                if (currentModalContext.type === 'group' && currentModalContext.targetId) {
+                    const bodyData = {
+                        groupId: currentModalContext.targetId,
+                        groupPicture: base64String
+                    };
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/group/avatar`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(bodyData)
+                        });
+                        if (response.ok) {
+                            alert('Group icon updated successfully!');
+                            if (closeProfileSettingsBtn) closeProfileSettingsBtn.click();
+                            else if (profileSettingsModal) profileSettingsModal.classList.remove('active');
+                            LoadChatrooms({ preserveActive: true });
+                            return; 
+                        }
                     }
-                } catch (error) {
-                    console.error('Error uploading avatar:', error);
+                    catch (error) {
+                        console.error('Error uploading group avatar:', error);
+                    }
+                }
+                else {
+                    const bodyData = {
+                        userId: CURRENT_USER_ID,
+                        profilePicture: base64String
+                    };
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/user/avatar`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(bodyData)
+                        });
+                        if (response.ok) {
+                            alert('Avatar uploaded successfully!');
+                            const currentName = getFirstName(settingsFullName?.value, settingsUsername?.value || "Me");
+                            updateMainUserAvatar(currentName, base64String);
+                        }
+                    }
+                    catch (error) {
+                        console.error('Error uploading user avatar:', error);
+                    }
                 }
             };
             reader.readAsDataURL(file);
@@ -656,9 +695,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (saveProfileBtn) {
-        saveProfileBtn.addEventListener('click', () => {
-            alert('Other information saved locally! Global update API integration coming soon.');
-            if (profileSettingsModal) profileSettingsModal.classList.remove('active');
+        saveProfileBtn.addEventListener('click', async () => {
+            if (currentModalContext.type === 'group' && currentModalContext.targetId) {
+                const targetName = settingsFullName.value.trim();
+                if (!targetName) return alert("Group name cannot be empty");
+                try {
+                    const response = await fetch(`${API_BASE_URL}/group/update`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ groupId: currentModalContext.targetId, name: targetName })
+                    });
+                    if (response.ok) {
+                        alert("Group information updated successfully!");
+                        if (profileSettingsModal) profileSettingsModal.classList.remove('active');
+                        LoadChatrooms({ preserveActive: true });
+                    } else {
+                        alert("Failed to update group information.");
+                    }
+                }
+                catch(err) {
+                    console.error("Error updating group info:", err);
+                }
+            }
+            else {
+                alert('Other information saved locally! Global update API integration coming soon.');
+                if (profileSettingsModal) profileSettingsModal.classList.remove('active');
+            }
         });
     }
 
@@ -842,30 +904,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // =============( Profiles modal )=============
+    let currentModalContext = { type: null, targetId: null };
     if (headerViewProfileBtn) {
         headerViewProfileBtn.addEventListener('click', async () => {
             if (!activeChat.targetId) return;
             let url = `${API_BASE_URL}/details?`;
-            if (activeChat.type === 'pv') {
-                url += `userId=${activeChat.targetId}`;
-            } else {
-                url += `groupId=${activeChat.targetId}`;
-            }
+            if (activeChat.type === 'pv') url += `userId=${activeChat.targetId}`;
+            else url += `groupId=${activeChat.targetId}`;
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error("Failed to fetch details");
                 const data = await response.json();
-                if (saveProfileBtn) saveProfileBtn.style.display = 'none';
-                if (deleteAvatarBtn) deleteAvatarBtn.style.display = 'none';
-                settingsFullName.readOnly = true;
-                settingsBio.readOnly = true;
-                if (settingsPhone) settingsPhone.parentNode.style.display = 'none';
+                currentModalContext.type = activeChat.type;
+                currentModalContext.targetId = activeChat.targetId;
+                const avatarWrapper = document.querySelector('.profile-avatar-wrapper');
+                const usernameGroup = settingsUsername.parentNode;
+                const fullNameGroup = settingsFullName.parentNode;
+                const bioGroup = settingsBio.parentNode;
+                const phoneGroup = settingsPhone ? settingsPhone.parentNode : null;
+                const membersSection = document.getElementById('modalGroupMembersSection');
 
                 if (activeChat.type === 'pv') {
                     document.getElementById('modalTitle').textContent = "User Profile"; 
+                    avatarWrapper.setAttribute('data-mode', 'view-only'); // Locks avatar updates
+                    usernameGroup.style.display = 'flex';
+                    fullNameGroup.style.display = 'flex';
+                    bioGroup.style.display = 'flex';
+                    if (phoneGroup) phoneGroup.style.display = 'none';
+                    if (membersSection) membersSection.style.display = 'none'; // Hidden on user profiles
+                    if (saveProfileBtn) saveProfileBtn.style.display = 'none';
+                    if (deleteAvatarBtn) deleteAvatarBtn.style.display = 'none';
                     settingsUsername.value = data.userName || "";
                     settingsFullName.value = data.fullName || "";
                     settingsBio.value = data.bio || "No bio available.";
+                    settingsFullName.readOnly = true;
+                    settingsBio.readOnly = true;
                     try {
                         const avatarRes = await fetch(`${API_BASE_URL}/user/avatar?userId=${activeChat.targetId}`);
                         if (avatarRes.ok) {
@@ -875,33 +948,64 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (!base64Image.startsWith('data:image')) {
                                     base64Image = `data:image/jpeg;base64,${base64Image}`;
                                 }
-
                                 profileModalAvatar.innerHTML = `<img src="${base64Image}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
-                            } else {
+                            }
+                            else {
                                 const letter = (data.fullName || data.userName || "?").charAt(0).toUpperCase();
                                 profileModalAvatar.innerHTML = `<div class="modal-contact-avatar" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:24px; background:var(--dark-blue); color:white; border-radius:50%;">${letter}</div>`;
                             }
-                        } else {
-                            throw new Error("Avatar not found");
                         }
-                    } catch (err) {
-                        const letter = (data.fullName || data.userName || "?").charAt(0).toUpperCase();
-                        profileModalAvatar.innerHTML = `<div class="modal-contact-avatar" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:24px; background:var(--dark-blue); color:white; border-radius:50%;">${letter}</div>`;
                     }
-                } else {
+                    catch (err) {
+                        profileModalAvatar.innerHTML = `?`;
+                    }
+                }
+                else {
                     document.getElementById('modalTitle').textContent = "Group Info";
-                    settingsUsername.value = `Owner: ${data.owner}`;
+                    usernameGroup.style.display = 'none';
+                    bioGroup.style.display = 'none';
+                    if (phoneGroup) phoneGroup.style.display = 'none';
+                    fullNameGroup.style.display = 'flex';
+                    fullNameGroup.querySelector('label').textContent = "Group Name";
                     settingsFullName.value = data.name || "";
-                    settingsBio.value = `Members Count: ${data.membersCount} users`;
-                    const letter = (data.name || "G").charAt(0).toUpperCase();
-                    profileModalAvatar.innerHTML = `<div class="modal-contact-avatar" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:24px; background:var(--dark-blue); color:white; border-radius:50%;">${letter}</div>`;
+                    const isOwner = (data.ownerId === CURRENT_USER_ID);
+                    try {
+                        const groupAvatarRes = await fetch(`${API_BASE_URL}/group/avatar?groupId=${activeChat.targetId}`);
+                        if (groupAvatarRes.ok) {
+                            const gAvatarData = await groupAvatarRes.json();
+                            if (gAvatarData && gAvatarData.groupPicture) {
+                                profileModalAvatar.innerHTML = `<img src="${gAvatarData.groupPicture}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+                            }
+                            else {
+                                const letter = (data.name || "G").charAt(0).toUpperCase();
+                                profileModalAvatar.innerHTML = `<div class="modal-contact-avatar" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:24px; background:var(--dark-blue); color:white; border-radius:50%;">${letter}</div>`;
+                            }
+                        }
+                    }
+                    catch(e) {
+                        profileModalAvatar.innerHTML = `G`;
+                    }
+                    
+                    if (isOwner) {
+                        avatarWrapper.removeAttribute('data-mode'); // Upload overlay
+                        settingsFullName.readOnly = false;          // Group name
+                        if (saveProfileBtn) saveProfileBtn.style.display = 'flex';
+                        if (deleteAvatarBtn) deleteAvatarBtn.style.display = 'flex';
+                    }
+                    else {
+                        avatarWrapper.setAttribute('data-mode', 'view-only'); // Hides upload overlay
+                        settingsFullName.readOnly = true;
+                        if (saveProfileBtn) saveProfileBtn.style.display = 'none';
+                        if (deleteAvatarBtn) deleteAvatarBtn.style.display = 'none';
+                    }
+                    renderGroupMembers(activeChat.targetId);
                 }
 
                 if (profileSettingsModal) profileSettingsModal.classList.add('active');
-
-            } catch (error) {
-                console.error("Error loading chat details:", error);
-                alert("Could not load profile details.");
+            }
+            catch (error) {
+                console.error("Error loading profile layout details:", error);
+                alert("Could not load details.");
             }
         });
     }
@@ -909,13 +1013,118 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeProfileSettingsBtn) {
         closeProfileSettingsBtn.addEventListener('click', () => {
             if (profileSettingsModal) profileSettingsModal.classList.remove('active');
-            if (saveProfileBtn) saveProfileBtn.style.display = 'block';
-            if (deleteAvatarBtn) deleteAvatarBtn.style.display = 'flex';
+            
+            const avatarWrapper = document.querySelector('.profile-avatar-wrapper');
+            if (avatarWrapper) avatarWrapper.removeAttribute('data-mode');
+            
+            settingsUsername.parentNode.style.display = 'flex';
+            settingsFullName.parentNode.style.display = 'flex';
+            settingsFullName.parentNode.querySelector('label').textContent = "Full Name";
+            settingsBio.parentNode.style.display = 'flex';
+            if (settingsPhone) settingsPhone.parentNode.style.display = 'block';
+            
             settingsFullName.readOnly = false;
             settingsBio.readOnly = false;
-            if (settingsPhone) settingsPhone.parentNode.style.display = 'block';
+            
+            if (saveProfileBtn) saveProfileBtn.style.display = 'block';
+            if (deleteAvatarBtn) deleteAvatarBtn.style.display = 'flex';
+            
             document.getElementById('modalTitle').textContent = "Profile Settings"; 
+            
+            const membersSection = document.getElementById('modalGroupMembersSection');
+            if (membersSection) membersSection.style.display = 'none';
+            
+            currentModalContext = { type: null, targetId: null };
         });
+    }
+
+    // =============( Group Profile )=============
+    async function updateGroupMetadata(groupId, targetName) {
+        if(!targetName.trim()) return alert("Group name can't be empty");
+        try {
+            const response = await fetch(`${API_BASE_URL}/group/update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ groupId: groupId, name: targetName })
+            });
+            if (response.ok) {
+                alert("Group configuration modified successfully!");
+                if (profileSettingsModal) profileSettingsModal.classList.remove('active');
+                LoadChatrooms({ preserveActive: true });
+            }
+        }
+        catch(err) {
+            console.error("Error processing text update request:", err);
+        }
+    }
+
+    function setupGroupAvatarUpload(groupId) {
+        if (!avatarFileInput) return;
+        const baseNewInput = avatarFileInput.cloneNode(true);
+        avatarFileInput.parentNode.replaceChild(baseNewInput, avatarFileInput);
+        baseNewInput.addEventListener('change', function() {
+            const selectedFile = this.files[0];
+            if (!selectedFile) return;
+            const fileBlobReader = new FileReader();
+            fileBlobReader.onload = async function(event) {
+                const encodedBase64 = event.target.result;
+                try {
+                    const response = await fetch(`${API_BASE_URL}/group/avatar`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ groupId: groupId, groupPicture: encodedBase64 })
+                    });
+                    if(response.ok) {
+                        alert("Group profile image updated successfully!");
+                        profileModalAvatar.innerHTML = `<img src="${encodedBase64}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+                        LoadChatrooms({ preserveActive: true });
+                    }
+                }
+                catch(e) {
+                    console.error(e);
+                }
+            };
+            fileBlobReader.readAsDataURL(selectedFile);
+        });
+    }
+
+    async function renderGroupMembers(groupId) {
+        const section = document.getElementById('modalGroupMembersSection');
+        const displayList = document.getElementById('modalGroupMembersList');
+        if (!section || !displayList) return;
+        section.style.display = 'flex';
+        displayList.innerHTML = '<span style="font-size:12px; opacity:0.5;">Loading room members...</span>';
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/details?groupId=${groupId}`);
+            if (res.ok) {
+                const data = await res.json();
+                displayList.innerHTML = ''; 
+                const members = data.membersList ? data.membersList.split(',') : [];
+                const groupOwnerName = data.owner;
+                if (members.length === 0) {
+                    displayList.innerHTML = '<span style="font-size:12px; opacity:0.5;">No members found.</span>';
+                    return;
+                }
+                members.forEach(username => {
+                    const isThisUserOwner = (username === groupOwnerName);
+                    const rowItem = document.createElement('div');
+                    rowItem.style = "display:flex; justify-content:space-between; align-items:center; font-size:13px; padding: 6px 4px; color: var(--text-white); border-bottom: 1px solid rgba(255,255,255,0.05);";
+                    rowItem.innerHTML = `
+                        <span>
+                            <i class="fas fa-user" style="margin-right:8px; color:${isThisUserOwner ? 'var(--cyan-aqua)' : 'rgba(255,255,255,0.4)'};"></i> 
+                            ${username}
+                        </span> 
+                        ${isThisUserOwner ? '<span style="font-size:11px; opacity:0.8; background:var(--dark-blue); color:white; padding:2px 6px; border-radius:4px; font-weight:bold;">Owner</span>' : '<span style="font-size:11px; opacity:0.4;">Member</span>'}
+                    `;
+                    displayList.appendChild(rowItem);
+                });
+            }
+        }
+        catch(err) {
+            console.error("Error displaying members list view context:", err);
+            displayList.innerHTML = '<span style="font-size:12px; color:#ef4444;">Error parsing items.</span>';
+        }
     }
 
     // =============( Fetch Contacts )=============

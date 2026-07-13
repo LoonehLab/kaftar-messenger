@@ -9,6 +9,7 @@ public class Group extends Chat
     private String id;
     private List<User> members;
     private User owner;
+    private String avatar = "";
     private List<Message> messages;
     private int numOfMessages;
     private String name;
@@ -51,6 +52,7 @@ public class Group extends Chat
         messages = new ArrayList<>();
 
         groupRepository = new GroupRepository(this);
+        this.avatar = groupRepository.getAvatar(); 
         this.messages = groupRepository.getArrayOfMessages();
         this.numOfMessages = this.messages.size();
 
@@ -149,9 +151,11 @@ public class Group extends Chat
     public int getNumOfMessages(){ return numOfMessages; }
     public String getId(){ return id; }
     public String getName(){ return name; }
+    public String getAvatar(){ return this.avatar; }
     public List<User> getMembers() { return members; }
     public List<Message> getMessages() { return messages; }
     public User getOwner(){ return owner; }
 
     public void setName(String name) { this.name = name; }
+    public void setAvatar(String avatar){ this.avatar = avatar; }
 }

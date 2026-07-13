@@ -480,6 +480,14 @@ body {
     background: var(--bg-input);
 }
 
+.profile-avatar-wrapper[data-mode="view-only"] .avatar-upload-overlay {
+    display: none !important;
+}
+
+.profile-avatar-wrapper[data-mode="view-only"] .avatar-delete-btn {
+    display: none !important;
+}
+
 .profile-modal-avatar {
     width: 100%;
     height: 100%;

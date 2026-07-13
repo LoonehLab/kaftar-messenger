@@ -12,11 +12,12 @@ public class Server {
         Account.login(server);
         Account.recoverPassword(server);
         Account.load(server);
-        Account.avatar(server);
         Account.search(server);
         Info.load(server);
         Info.updateProfile(server);
         Info.updateGroupInfo(server);
+        Info.userAvatar(server);
+        Info.groupAvatar(server);
         Chatroom.setState(server);
         Chatroom.loadPV(server);
         Chatroom.loadGroup(server);

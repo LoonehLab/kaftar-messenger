@@ -177,43 +177,6 @@ public class Account {
         });
     }
 
-    public static void avatar(HttpServer server) {
-        server.createContext("/api/user/avatar", exchange -> {
-            Core.handleCORS(exchange);
-            if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) return;
-            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) { // Save
-                String body = Core.getRequestBody(exchange);
-                String userId = Core.extractJsonValue(body, "userId");
-                String base64Image = Core.extractJsonValue(body, "profilePicture");
-                User currentUser = userRepo.findUserById(userId);
-                if (currentUser == null) {
-                    Core.sendResponse(exchange, 404, "{\"error\":\"User not found\"}");
-                    return;
-                }
-                currentUser.setAvatar(base64Image);
-                currentUser.getInformationRepository().saveAvatar();
-                Core.sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Profile picture updated successfully\"}");
-            }
-            
-            else if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) { // Load
-                String query = exchange.getRequestURI().getQuery();
-                String userId = query != null && query.contains("userId=") ? query.split("userId=")[1] : "";
-                User currentUser = userRepo.findUserById(userId);
-                if (currentUser == null) {
-                    Core.sendResponse(exchange, 404, "{\"error\":\"User not found\"}");
-                    return;
-                }
-                String base64Image = currentUser.getInformationRepository().getAvatar();
-                if (base64Image == null) {
-                    base64Image = "";
-                }
-                Core.sendResponse(exchange, 200, String.format("{\"userId\":\"%s\",\"profilePicture\":\"%s\"}", currentUser.getId(), base64Image));
-            }
-
-            else Core.sendResponse(exchange, 405, "Method Not Allowed");
-        });
-    }
-
     public static void search(HttpServer server) {
         server.createContext("/api/user/search", exchange -> {
             Core.handleCORS(exchange);

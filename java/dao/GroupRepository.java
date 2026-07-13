@@ -9,6 +9,7 @@ public class GroupRepository
 {
     private String directoryPath;
     private File folder;
+    private String avatarPath;
     private String memberPath;
     private String messagePath;
     private String dataPath;
@@ -26,10 +27,12 @@ public class GroupRepository
         }
 
         File dataFile = new File(folder, group.getId() + "data.txt");
+        File avatarFile = new File(folder, group.getId() + "avatar.txt");
         File memberFile = new File(folder, group.getId() + "member.txt");
         File messageFile = new File(folder, group.getId() + "message.txt");
 
         this.dataPath = dataFile.getAbsolutePath();
+        this.avatarPath = avatarFile.getAbsolutePath();
         this.memberPath = memberFile.getAbsolutePath();
         this.messagePath = messageFile.getAbsolutePath();
 
@@ -48,7 +51,7 @@ public class GroupRepository
                     e.printStackTrace();
                }
             }
-
+            if(!avatarFile.exists()) avatarFile.createNewFile();
             if(!memberFile.exists()) memberFile.createNewFile();
             if(!messageFile.exists()) messageFile.createNewFile();
         }
@@ -243,5 +246,32 @@ public class GroupRepository
         }
 
         folder.delete();
+    }
+
+    public void saveAvatar(String base64Image)
+    {
+        try(FileWriter writer = new FileWriter(avatarPath, false)) {
+            writer.write(base64Image != null ? base64Image : "");
+        }
+        catch(IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String getAvatar()
+    {
+        File file = new File(avatarPath);
+        if (!file.exists()) return "";
+        StringBuilder sb = new StringBuilder();
+        try(BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+        }
+        catch(IOException e) {
+            e.printStackTrace();
+        }
+        return sb.toString();
     }
 }
