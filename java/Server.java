@@ -14,10 +14,12 @@ public class Server {
         Account.load(server);
         Account.avatar(server);
         Account.search(server);
+        Account.updateProfile(server);
         Info.load(server);
         Chatroom.setState(server);
         Chatroom.loadPV(server);
         Chatroom.loadGroup(server);
+        Chatroom.updateGroupInfo(server);
         Contacts.Manage(server);
         Messages.Manage(server);
         

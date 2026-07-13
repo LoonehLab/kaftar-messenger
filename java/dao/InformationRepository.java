@@ -104,7 +104,8 @@ public class InformationRepository
 
     public void saveBioAndOtherData()
     {
-        try(FileWriter writer = new FileWriter("bio.txt" , false))
+        File file = new File(userDirectory, "bio.txt");
+        try(FileWriter writer = new FileWriter(file , false))
         {
             writer.write(user.getBio());
         }

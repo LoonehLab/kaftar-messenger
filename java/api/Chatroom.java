@@ -161,6 +161,45 @@ public class Chatroom {
         });
     }
 
+    public static void updateGroupInfo(HttpServer server) {
+        server.createContext("/api/group/update", exchange -> {
+            Core.handleCORS(exchange);
+            if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) return;
+            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String body = Core.getRequestBody(exchange);
+                String groupId = Core.extractJsonValue(body, "groupId");
+                String newName = Core.extractJsonValue(body, "name");
+                Group targetGroup = Core.findGroupById(groupId);
+                if (targetGroup == null) {
+                    Core.sendResponse(exchange, 404, "{\"error\":\"Group not found\"}");
+                    return;
+                }
+                if (newName.isEmpty()) {
+                    Core.sendResponse(exchange, 400, "{\"error\":\"Group name cannot be empty\"}");
+                    return;
+                }
+                targetGroup.setName(newName);
+                GroupRepository groupRepoLocal = new GroupRepository(targetGroup);
+                groupRepoLocal.changeData(targetGroup.getId(), newName, targetGroup.getOwner().getId());
+                List<Group> allGroups = groupRepo.findAll();
+                try (java.io.FileWriter writer = new java.io.FileWriter(".." + java.io.File.separator + "data" + java.io.File.separator + "groups.txt", false)) {
+                    for (Group g : allGroups) {
+                        String gName = g.getId().equals(groupId) ? newName : g.getName();
+                        writer.write(g.getId() + " , " + gName + " , " + g.getOwner().getId() + "\n");
+                    }
+                }
+                catch (java.io.IOException e) {
+                    e.printStackTrace();
+                    Core.sendResponse(exchange, 500, "{\"error\":\"Database error while updating groups file\"}");
+                    return;
+                }
+
+                Core.sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Group name updated successfully\"}");
+            }
+            else Core.sendResponse(exchange, 405, "Method Not Allowed");
+        });
+    }
+
     public static void setState(HttpServer server) {
         server.createContext("/api/chatroom/state", exchange -> {
             Core.handleCORS(exchange);
