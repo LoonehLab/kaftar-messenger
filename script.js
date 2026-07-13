@@ -118,6 +118,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getAvatarHTML(name, base64Image) {
+        if (base64Image === "saved_messages_icon") {
+            return `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white;">
+                        <i class="fas fa-bookmark" style="font-size: 16px;"></i>
+                    </div>`;
+        }
         if (base64Image && base64Image.trim() !== "") {
             return `<img src="${base64Image}" style="width:100%; height:100%; object-fit:cover;">`;
         }
@@ -183,7 +188,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 createArchiveFolderItemHTML();
             }
 
-            const filteredRooms = allRooms.filter(room => { // Filter Archives
+            let savedMessagesRoom = allRooms.find(room => room.id === CURRENT_USER_ID && room.type === 'pv');
+
+            if (!savedMessagesRoom && !isViewingArchive) {
+                savedMessagesRoom = {
+                    id: CURRENT_USER_ID,
+                    name: "Saved Messages",
+                    type: 'pv',
+                    profilePicture: 'saved_messages_icon',
+                    isArchived: false,
+                    isPinned: false
+                };
+            }
+
+            const filteredRooms = allRooms.filter(room => { 
+                if (room.id === CURRENT_USER_ID && room.type === 'pv') return false; 
                 if (isViewingArchive) {
                     return room.isArchived;
                 } else {
@@ -191,18 +210,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            filteredRooms.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0)); // Show pinned first
+            const pinnedRooms = filteredRooms.filter(room => room.isPinned);
+            const unpinnedRooms = filteredRooms.filter(room => !room.isPinned);
 
-            filteredRooms.forEach(room => {
+            pinnedRooms.forEach(room => {
                 createChatroomItemHTML(room.id, room.name, room.type, room.profilePicture, room.isPinned);
             });
-
-            let itemToActivate = null;
-            if (selectTargetId && selectType) {
-                itemToActivate = chatroomListContainer.querySelector(
-                    `.chatroom-item[data-target-id="${selectTargetId}"][data-type="${selectType}"]`
+            if (savedMessagesRoom && !isViewingArchive) {
+                createChatroomItemHTML(
+                    savedMessagesRoom.id, 
+                    "Saved Messages", 
+                    savedMessagesRoom.type, 
+                    "saved_messages_icon", 
+                    savedMessagesRoom.isPinned
                 );
-            } else if (preserveActive && activeChat.targetId) {
+            }
+            unpinnedRooms.forEach(room => {
+                createChatroomItemHTML(room.id, room.name, room.type, room.profilePicture, room.isPinned);
+            });
+            let itemToActivate = null;
+            if (options.selectTargetId && options.selectType) {
+                itemToActivate = chatroomListContainer.querySelector(
+                    `.chatroom-item[data-target-id="${options.selectTargetId}"][data-type="${options.selectType}"]`
+                );
+            }
+            else if (options.preserveActive && activeChat.targetId) {
                 itemToActivate = chatroomListContainer.querySelector(
                     `.chatroom-item[data-target-id="${activeChat.targetId}"][data-type="${activeChat.type}"]`
                 );
@@ -219,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentRoomAvatar.innerHTML = avatarEl.innerHTML;
                 if (appContainer) appContainer.classList.add('chat-open');
 
-                if (!preserveActive || selectTargetId) {
+                if (!options.preserveActive || options.selectTargetId) {
                     loadMessages();
                     setupAutoUpdate();
                 }
