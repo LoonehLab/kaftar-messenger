@@ -248,6 +248,7 @@ public class GroupRepository
 
     public void removeMessage(Message mess)
     {
+        addDeletedMessage(mess);
         List<Message> keeper = this.getArrayOfMessages();
         try(FileWriter writer = new FileWriter(messagePath, false))
         {
@@ -257,7 +258,6 @@ public class GroupRepository
             {
                 if(mess.getId() == m.getId())
                 {
-                    addDeletedMessage(mess);
                     continue;
                 } 
                 else
