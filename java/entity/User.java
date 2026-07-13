@@ -141,7 +141,13 @@ public class User
     public String getFullName() { return fullName; }
     public String getPassword(){ return password;}
     public String getAvatar() { return avatar; }
-    public String getBio(){ return bio;}
+    public String getBio() {
+        if (this.bio == null || this.bio.isEmpty()) {
+            String loadedBio = getInformationRepository().getBio();
+            if (loadedBio != null) this.bio = loadedBio;
+        }
+        return this.bio;
+    }
     public String getPhoneNumber(){ return phoneNumber;}
     public List<PV> getPv(){ return pv; }
     public List<Group> getGroups(){ return groups; }

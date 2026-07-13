@@ -247,41 +247,6 @@ public class Account {
         });
     }
 
-    public static void updateProfile(HttpServer server) {
-        server.createContext("/api/user/update", exchange -> {
-            Core.handleCORS(exchange);
-            if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) return;
-            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-                String body = Core.getRequestBody(exchange);
-                String userId = Core.extractJsonValue(body, "userId");
-                String newFullName = Core.extractJsonValue(body, "fullName");
-                String newBio = Core.extractJsonValue(body, "bio");
-                User currentUser = userRepo.findUserById(userId);
-                if (currentUser == null) {
-                    Core.sendResponse(exchange, 404, "{\"error\":\"User not found\"}");
-                    return;
-                }
-                if (!newFullName.isEmpty()) {
-                    currentUser.setFullName(newFullName);
-                }
-                if (!newBio.isEmpty())currentUser.setBio(newBio);
-                List<User> allUsers = userRepo.getAllUsers();
-                try (java.io.FileWriter writer = new java.io.FileWriter(".." + java.io.File.separator + "data" + java.io.File.separator + "users.txt", false)) {
-                    for (User u : allUsers)
-                        writer.write(u.getId() + " , " + u.getUserName() + " , " + u.getFullName() + " , " + u.getPassword() + "\n");
-                }
-                catch (java.io.IOException e) {
-                    e.printStackTrace();
-                    Core.sendResponse(exchange, 500, "{\"error\":\"Database error while saving user\"}");
-                    return;
-                } 
-                currentUser.getInformationRepository().saveBioAndOtherData();
-                Core.sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Profile updated successfully\"}");
-            } 
-            else Core.sendResponse(exchange, 405, "Method Not Allowed");
-        });
-    }
-  
     private static boolean validatePassword(String password, String username) {
         if (password.length() < 8 || password.contains(username)) return false;
         String pattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!$#@%&^*]).+$";

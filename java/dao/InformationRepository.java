@@ -107,7 +107,7 @@ public class InformationRepository
         File file = new File(userDirectory, "bio.txt");
         try(FileWriter writer = new FileWriter(file , false))
         {
-            writer.write(user.getBio());
+            writer.write(user.getBio() != null ? user.getBio() : "");
         }
 
         catch(IOException e)
