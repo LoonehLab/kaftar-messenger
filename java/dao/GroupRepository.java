@@ -13,6 +13,7 @@ public class GroupRepository
     private String memberPath;
     private String messagePath;
     private String deletePath;
+    private String editedPath;
     private String dataPath;
     private Group group;
 
@@ -32,12 +33,14 @@ public class GroupRepository
         File memberFile = new File(folder, group.getId() + "member.txt");
         File messageFile = new File(folder, group.getId() + "message.txt");
         File deletedMessageFile = new File(folder, group.getId() + "delete.txt");
+        File editedMessageFile = new File(folder, group.getId() + "edited.txt");
 
         this.dataPath = dataFile.getAbsolutePath();
         this.avatarPath = avatarFile.getAbsolutePath();
         this.memberPath = memberFile.getAbsolutePath();
         this.messagePath = messageFile.getAbsolutePath();
         this.deletePath = deletedMessageFile.getAbsolutePath();
+        this.editedPath = editedMessageFile.getAbsolutePath();
 
         try
         {
@@ -58,6 +61,7 @@ public class GroupRepository
             if(!memberFile.exists()) memberFile.createNewFile();
             if(!messageFile.exists()) messageFile.createNewFile();
             if(!deletedMessageFile.exists()) deletedMessageFile.createNewFile();
+            if(!editedMessageFile.exists()) editedMessageFile.createNewFile();
         }
         catch(IOException e)
         {
@@ -95,9 +99,23 @@ public class GroupRepository
 
     public void addDeletedMessage(Message message)
     {
-        removeMessage(message);
-
         try(FileWriter writer = new FileWriter(deletePath, true))
+        {
+            String cleanText = message.getText().replace("║", " ").replace("\n", " ");
+            message.setText(cleanText);
+            writer.write("║" + message.getId() + " , " + message.getSenderId() + " , " + 
+                         message.getReceiverId() + " , " + message.getTime() + " , " + 
+                         message.getEdited() + " , " + message.getSeen() + " , " + cleanText + "\n");
+        }
+        catch(IOException e) 
+        {
+           e.printStackTrace();
+        } 
+    }
+
+    public void addEditedMessage(Message message)
+    {
+        try(FileWriter writer = new FileWriter(editedPath, true))
         {
             String cleanText = message.getText().replace("║", " ").replace("\n", " ");
             message.setText(cleanText);
@@ -189,6 +207,45 @@ public class GroupRepository
         return array;
     }
 
+    public List<Message> getArrayOfEditedMessages()
+    {
+        List<Message> array = new ArrayList<>();
+        File file = new File(editedPath);
+        
+        if(!file.exists()) return array;
+
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        {
+            String line;
+            while ((line = reader.readLine()) != null) 
+            {
+               if (line.trim().isEmpty() || !line.startsWith("║")) continue;
+
+               String rawMessage = line.substring(1);
+               String[] messageData = rawMessage.split(" , ", 7);
+               
+               if(messageData.length < 7) continue;
+
+               int newId = Integer.parseInt(messageData[0].trim());
+               String sender = messageData[1].trim();
+               String receiver = messageData[2].trim();
+               long time = Long.parseLong(messageData[3].trim());
+               boolean edited = Boolean.parseBoolean(messageData[4].trim());
+               boolean seen = Boolean.parseBoolean(messageData[5].trim());
+               String text = messageData[6];
+
+               Message newMessage = new Message(newId, sender, receiver, text, time, edited, true, seen);
+               array.add(newMessage);
+            }
+        }
+        catch(IOException e) 
+        {
+           e.printStackTrace();
+        } 
+
+        return array;
+    }
+
     public void removeMessage(Message mess)
     {
         List<Message> keeper = this.getArrayOfMessages();
@@ -198,7 +255,11 @@ public class GroupRepository
             
             for(Message m : keeper)
             {
-                if(mess.getId() == m.getId()) continue;
+                if(mess.getId() == m.getId())
+                {
+                    addDeletedMessage(mess);
+                    continue;
+                } 
                 else
                 {
                     String messageStr = "║" + m.getId() + " , " + m.getSenderId() + " , " + 
@@ -340,5 +401,21 @@ public class GroupRepository
             e.printStackTrace();
         }
         return sb.toString();
+    }
+
+    public void editMessage(String newText , Message message)
+    {
+        List<Message> messages = getArrayOfMessages();
+
+        for(int i=0 ; i<messages.size() ; i++)
+        {
+            if(message.getId() == (messages.get(i).getId()))
+            {
+                addEditedMessage(message);
+                messages.get(i).setText(newText);
+            }
+
+            addMessage(message);
+        }
     }
 }
