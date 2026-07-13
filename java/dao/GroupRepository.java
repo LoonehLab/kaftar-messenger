@@ -347,7 +347,7 @@ public class GroupRepository
         List<Message> messages = getArrayOfMessages();
         for(int i=0 ; i<messages.size() ; i++)
         {
-            addDeletedMessage(messages.get(i));
+            removeMessage(messages.get(i));
         }
 
         try(FileWriter writer = new FileWriter(messagePath , false))
