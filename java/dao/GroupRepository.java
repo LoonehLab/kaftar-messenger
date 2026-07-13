@@ -413,9 +413,22 @@ public class GroupRepository
             {
                 addEditedMessage(message);
                 messages.get(i).setText(newText);
+                messages.get(i).setEdited(true);
+                break;
             }
-
-            addMessage(message);
         }
+
+        try (PrintWriter writer = new PrintWriter(new FileWriter(messagePath, false))) 
+        {
+        for (Message m : messages) 
+        {
+            String cleanText = m.getText().replace("║", " ").replace("\n", " ");
+            m.setText(cleanText);
+            writer.write("║" + m.getId() + " , " + m.getSenderId() + " , " + 
+                         m.getReceiverId() + " , " + m.getTime() + " , " + 
+                         m.getEdited() + " , " + m.getSeen() + " , " + cleanText + "\n");
+        }
+        } 
+        catch (IOException e) { e.printStackTrace(); }
     }
 }
