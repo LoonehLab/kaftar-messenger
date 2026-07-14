@@ -15,11 +15,9 @@ public class GroupRepository
     private String deletePath;
     private String editedPath;
     private String dataPath;
-    private Group group;
 
     public GroupRepository(Group group)
     {
-        this.group = group;
         directoryPath = ".." + File.separator + "data" + File.separator + "groups" + File.separator + group.getId();
         
         folder = new File(directoryPath);
@@ -252,8 +250,6 @@ public class GroupRepository
         List<Message> keeper = this.getArrayOfMessages();
         try(FileWriter writer = new FileWriter(messagePath, false))
         {
-            writer.write(group.getId() + "\n" + group.getName() + "\n" + group.getOwner().getId() + "\n");
-            
             for(Message m : keeper)
             {
                 if(mess.getId() == m.getId())
@@ -271,7 +267,7 @@ public class GroupRepository
         }
         catch(IOException e) 
         {
-           e.printStackTrace();
+            e.printStackTrace();
         } 
     }
 

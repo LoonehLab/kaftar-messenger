@@ -106,12 +106,16 @@ public class Group extends Chat
     public void edit(String newText , Message mes)
     {
         mes.setText(newText);
+        mes.setEdited(true);
+        this.groupRepository.editMessage(newText, mes);
     }
 
     public void deleteMessage(Message mes)
     {
         mes.setDeleted(true);
+        messages.remove(mes);
         numOfMessages--;
+        this.groupRepository.removeMessage(mes);
     }
 
     public void deleteChat()
