@@ -922,6 +922,213 @@ body {
     color: var(--text-white);
 }
 
+.archive-folder-row {
+    border-bottom: 1px dashed var(--border-light);
+    margin-bottom: 12px;
+}
+
+.archive-folder-row .room-avatar {
+    background: linear-gradient(135deg, #64748b, #475569);
+}
+
+.archive-folder-row .room-name {
+    font-weight: 600;
+}
+
+.archive-folder-row .fa-chevron-right {
+    color: var(--icon-mute);
+    font-size: 12px;
+    padding-right: 5px;
+}
+
+.room-avatar-saved-messages {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+}
+
+.room-avatar-saved-messages i {
+    font-size: 16px;
+}
+
+.user-main-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.pinned-chat-indicator {
+    color: var(--cyan-aqua);
+    font-size: 12px;
+    margin-left: 8px;
+}
+
+.chatroom-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.archive-empty-state-text {
+    padding: 20px;
+    text-align: center;
+    opacity: 0.5;
+    font-size: 14px;
+}
+
+.search-no-results {
+    padding: 15px;
+    text-align: center;
+    opacity: 0.6;
+}
+
+.group-member-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.group-member-item:hover:not(.already-member) {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.group-member-item.already-member {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.member-avatar-fallback {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--dark-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.member-info-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.member-info-column .name {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.member-info-column .uid {
+    font-size: 11px;
+    opacity: 0.4;
+}
+
+.already-member-badge {
+    font-size: 11px;
+    color: var(--cyan-aqua);
+    opacity: 0.7;
+}
+
+.add-member-action-icon {
+    color: var(--cyan-aqua);
+    font-size: 16px;
+}
+
+.add-member-trigger-btn {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 12px;
+    background: rgba(0, 242, 254, 0.1);
+    border: 1px dashed var(--cyan-aqua);
+    color: var(--cyan-aqua);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.add-member-trigger-btn:hover {
+    background: var(--cyan-aqua);
+    color: black;
+}
+
+.group-member-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    padding: 6px 4px;
+    color: var(--text-white);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.group-member-row .left-side {
+    display: flex;
+    align-items: center;
+}
+
+.group-member-row .left-side i {
+    margin-right: 8px;
+}
+
+.group-member-row .right-side {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.owner-badge {
+    font-size: 11px;
+    opacity: 0.8;
+    background: var(--dark-blue);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.member-badge {
+    font-size: 11px;
+    opacity: 0.4;
+    margin-right: 5px;
+}
+
+.remove-member-btn {
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid #ef4444;
+    color: #ef4444;
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    transition: all 0.2s ease;
+}
+
+.remove-member-btn:hover {
+    background: #ef4444;
+    color: white;
+}
+
 @media (max-width: 767px) {
     .back-btn {
         display: block;

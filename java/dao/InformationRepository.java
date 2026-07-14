@@ -340,15 +340,30 @@ public class InformationRepository
 
     public void removeGroup(Group group)
     {
+        if (group == null || group.getId() == null) {
+            System.out.println("DEBUG: Group or Group ID is null!");
+            return;
+        }
+
         File file = new File(userDirectory, "group.txt");
+        if (!file.exists()) {
+            System.out.println("DEBUG: group.txt does not exist for user: " + user.getId());
+            return;
+        }
+
         List<String> lines = new ArrayList<>();
+        String targetId = group.getId().trim();
 
         try(BufferedReader reader = new BufferedReader(new FileReader(file)))
         {
             String line;
             while ((line = reader.readLine()) != null)
             {
-                if (!line.startsWith(group.getId() + ":") && !line.isEmpty())
+                line = line.trim();
+                if (line.isEmpty()) continue;
+                String[] parts = line.split(":");
+                String currentGroupId = parts[0].trim();
+                if (!currentGroupId.equals(targetId))
                 {
                     lines.add(line);
                 }

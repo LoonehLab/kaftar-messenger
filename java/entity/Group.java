@@ -128,6 +128,8 @@ public class Group extends Chat
     {
         members.remove(user);
         user.removeGroup(this);
+        user.getInformationRepository().removeGroup(this); 
+        groupRepository.removeMember(user);
     }
 
     public void deleteGroupForAll()

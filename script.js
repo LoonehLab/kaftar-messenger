@@ -26,6 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const headerSettingsMenu = document.getElementById('headerSettingsMenu');
     const headerViewProfileBtn = document.getElementById('headerViewProfileBtn');
 
+    const groupAddMemberModal = document.getElementById('groupAddMemberModal');
+    const closeGroupAddMemberBtn = document.getElementById('closeGroupAddMemberBtn');
+    const groupAddMemberContactsList = document.getElementById('groupAddMemberContactsList');
+
     const messageInput = document.querySelector('.input-container input');
     const messagesContainer = document.querySelector('.messages-container');
     const appContainer = document.querySelector('.app-container');
@@ -47,11 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let updateIntervalId = null;
 
     // =============( Switch Mode Button )=============
-    if (themeToggleBtn) {
-        themeToggleBtn.addEventListener('click', () => {
+    if (window.themeToggleBtn || document.getElementById('themeToggleBtn')) {
+        const btn = window.themeToggleBtn || document.getElementById('themeToggleBtn');
+        btn.addEventListener('click', () => {
             const htmlElement = document.documentElement;
             const currentTheme = htmlElement.getAttribute('data-theme');
-            const icon = themeToggleBtn.querySelector('i');
+            const icon = btn.querySelector('i');
             if (currentTheme === 'dark') {
                 htmlElement.setAttribute('data-theme', 'light');
                 icon.className = 'fas fa-moon';
@@ -64,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const savedTheme = localStorage.getItem('theme') || 'dark';
         document.documentElement.setAttribute('data-theme', savedTheme);
-        const icon = themeToggleBtn.querySelector('i');
+        const icon = btn.querySelector('i');
         if (savedTheme === 'dark') {
             icon.className = 'fas fa-sun';
         } else {
@@ -119,21 +124,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getAvatarHTML(name, base64Image) {
         if (base64Image === "saved_messages_icon") {
-            return `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white;">
-                        <i class="fas fa-bookmark" style="font-size: 16px;"></i>
+            return `<div class="room-avatar-saved-messages">
+                        <i class="fas fa-bookmark"></i>
                     </div>`;
         }
         if (base64Image && base64Image.trim() !== "") {
-            return `<img src="${base64Image}" style="width:100%; height:100%; object-fit:cover;">`;
+            return `<img src="${base64Image}">`;
         }
-        const firstLetter = name ? name.trim().charAt(0).toUpperCase() : '?';
-        return firstLetter;
+        return name ? name.trim().charAt(0).toUpperCase() : '?';
     }
 
     function updateMainUserAvatar(fullName, base64Image) {
         let avatarHTML = getAvatarHTML(fullName, base64Image);
         if (base64Image && base64Image.trim() !== "") {
-            avatarHTML = `<img src="${base64Image}" class="user-main-img" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+            avatarHTML = `<img src="${base64Image}" class="user-main-img">`;
         }
         if (mainUserAvatar) {
             mainUserAvatar.innerHTML = avatarHTML;
@@ -148,7 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch(`${API_BASE_URL}/user/init?userId=${CURRENT_USER_ID}`);
             const userData = await res.json();
-            console.log("User data loaded:", userData);
             chatroomListContainer.innerHTML = '';
             const myDisplayName = getFirstName(
                 userData.fullName,
@@ -201,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const allRooms = [...resolvedPvs, ...groupsList];
 
-            if (!isViewingArchive) { // Render Archive Item
+            if (!isViewingArchive) { 
                 createArchiveFolderItemHTML();
             }
 
@@ -274,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else if (filteredRooms.length === 0 && isViewingArchive) {
                 chatroomListContainer.innerHTML += `
-                    <div style="padding: 20px; text-align: center; opacity: 0.5; font-size: 14px;">
+                    <div class="archive-empty-state-text">
                         No archived chats found
                     </div>
                 `;
@@ -298,17 +301,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function createArchiveFolderItemHTML() {
         const itemDiv = document.createElement('div');
         itemDiv.classList.add('chatroom-item', 'archive-folder-row');
-        itemDiv.style.borderBottom = '1px dashed var(--border-light)';
-        itemDiv.style.marginBottom = '12px';
         
         itemDiv.innerHTML = `
             <div class="room-info">
-                <div class="room-avatar" style="background: linear-gradient(135deg, #64748b, #475569)">
-                    <i class="fas fa-archive" style="color: white; font-size: 16px;"></i>
+                <div class="room-avatar">
+                    <i class="fas fa-archive"></i>
                 </div>
-                <span class="room-name" style="font-weight: 600;">Archived Chats</span>
+                <span class="room-name">Archived Chats</span>
             </div>
-            <i class="fas fa-chevron-right" style="color: var(--icon-mute); font-size: 12px; padding-right: 5px;"></i>
+            <i class="fas fa-chevron-right"></i>
         `;
         
         itemDiv.addEventListener('click', (e) => {
@@ -327,14 +328,14 @@ document.addEventListener('DOMContentLoaded', () => {
         itemDiv.classList.add('chatroom-item');
         itemDiv.setAttribute('data-type', type);
         itemDiv.setAttribute('data-target-id', id);
-        const pinIconHTML = isPinned ? `<i class="fas fa-thumbtack pin-icon" style="color: var(--cyan-aqua); font-size: 12px; margin-left: 8px;"></i>` : '';
+        const pinIconHTML = isPinned ? `<i class="fas fa-thumbtack pin-icon pinned-chat-indicator"></i>` : '';
         
         itemDiv.innerHTML = `
             <div class="room-info">
                 <div class="room-avatar">${getAvatarHTML(name, avatarBase64)}</div>
                 <span class="room-name">${name}</span>
             </div>
-            <div class="item-actions-wrapper" style="display: flex; align-items: center; gap: 8px;">
+            <div class="chatroom-item-actions">
                 ${pinIconHTML}
                 <i class="fas fa-ellipsis-v options-icon"></i>
             </div>
@@ -421,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const searchResults = data.results;
             chatroomListContainer.innerHTML = '';
             if (searchResults.length === 0) {
-                chatroomListContainer.innerHTML = '<div style="padding:15px; text-align:center; opacity:0.6;">No users found</div>';
+                chatroomListContainer.innerHTML = '<div class="search-no-results">No users found</div>';
                 return;
             }
             const resolvedResults = await Promise.all(
@@ -582,7 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     );
                     if (data.profilePicture && data.profilePicture.trim() !== "") {
                         if (profileModalAvatar) {
-                            profileModalAvatar.innerHTML = `<img src="${data.profilePicture}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+                            profileModalAvatar.innerHTML = `<img src="${data.profilePicture}" class="user-main-img">`;
                         }
                     } else {
                         if (profileModalAvatar) profileModalAvatar.innerHTML = getAvatarHTML(currentName, "");
@@ -724,6 +725,90 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // =============( Add Member Modal )=============
+    if (closeGroupAddMemberBtn) {
+        closeGroupAddMemberBtn.addEventListener('click', () => {
+            if (groupAddMemberModal) groupAddMemberModal.classList.remove('active');
+        });
+    }
+    async function openGroupAddMemberModal(groupId) {
+        if (!groupAddMemberModal || !groupAddMemberContactsList) return;
+        groupAddMemberModal.style.zIndex = "2001";
+        groupAddMemberModal.classList.add('active');
+        groupAddMemberContactsList.innerHTML = '<div class="modal-loading"><i class="fas fa-spinner fa-spin"></i> Loading contacts...</div>';
+        try {
+            const groupDetailsRes = await fetch(`${API_BASE_URL}/details?groupId=${groupId}`);
+            let currentMembers = [];
+            if (groupDetailsRes.ok) {
+                const groupData = await groupDetailsRes.json();
+                currentMembers = groupData.membersList ? groupData.membersList.split(',') : [];
+            }
+            const response = await fetch(`${API_BASE_URL}/contacts?userId=${CURRENT_USER_ID}`);
+            if (!response.ok) throw new Error('Failed to fetch contacts');
+            const contacts = await response.json();
+            groupAddMemberContactsList.innerHTML = '';
+            if (contacts.length === 0) {
+                groupAddMemberContactsList.innerHTML = '<div class="modal-loading">No contacts found.</div>';
+                return;
+            }
+            contacts.forEach(contact => {
+                const contactName = contact.userName || 'Unknown';
+                const contactId = contact.userId;
+                const isAlreadyMember = currentMembers.includes(contactName) || currentMembers.includes(contactId);
+                const item = document.createElement('div');
+                item.className = 'group-member-item' + (isAlreadyMember ? ' already-member' : '');
+                
+                item.innerHTML = `
+                    <div class="room-info">
+                        <div class="member-avatar-fallback">
+                            ${contactName.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="member-info-column">
+                            <span class="name">${contactName}</span>
+                            <span class="uid">ID: ${contactId}</span>
+                        </div>
+                    </div>
+                    ${isAlreadyMember 
+                        ? '<span class="already-member-badge">Already Member</span>' 
+                        : '<i class="fas fa-plus-circle add-member-action-icon"></i>'}
+                `;
+                if (!isAlreadyMember) {
+                    item.addEventListener('click', async () => {
+                        try {
+                            const addRes = await fetch(`${API_BASE_URL}/group`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    action: "addMember",
+                                    groupId: groupId,
+                                    memberId: contactId
+                                })
+                            });
+                            if (addRes.ok) {
+                                alert(`${contactName} added to the group successfully!`);
+                                groupAddMemberModal.classList.remove('active');
+                                renderGroupMembers(groupId);
+                            }
+                            else {
+                                const err = await addRes.json();
+                                alert(`Error: ${err.error || 'Could not add member'}`);
+                            }
+                        }
+                        catch (err) {
+                            console.error("Error adding member through modal:", err);
+                            alert("Network error occurred.");
+                        }
+                    });
+                }
+
+                groupAddMemberContactsList.appendChild(item);
+            });
+        }
+        catch (error) {
+            console.error('Error loading add member contacts list:', error);
+            groupAddMemberContactsList.innerHTML = '<div class="modal-loading" style="color:#ef4444;">Error loading contacts.</div>';
+        }
+    }
     //=============( Message Modal )=============
     document.addEventListener('click', () => {
         if (contextMenu) contextMenu.style.display = 'none';
@@ -948,11 +1033,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (!base64Image.startsWith('data:image')) {
                                     base64Image = `data:image/jpeg;base64,${base64Image}`;
                                 }
-                                profileModalAvatar.innerHTML = `<img src="${base64Image}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+                                profileModalAvatar.innerHTML = `<img src="${base64Image}">`;
                             }
                             else {
                                 const letter = (data.fullName || data.userName || "?").charAt(0).toUpperCase();
-                                profileModalAvatar.innerHTML = `<div class="modal-contact-avatar" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:24px; background:var(--dark-blue); color:white; border-radius:50%;">${letter}</div>`;
+                                profileModalAvatar.innerHTML = `<div class="modal-contact-avatar">${letter}</div>`;
                             }
                         }
                     }
@@ -974,11 +1059,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (groupAvatarRes.ok) {
                             const gAvatarData = await groupAvatarRes.json();
                             if (gAvatarData && gAvatarData.groupPicture) {
-                                profileModalAvatar.innerHTML = `<img src="${gAvatarData.groupPicture}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+                                profileModalAvatar.innerHTML = `<img src="${gAvatarData.groupPicture}">`;
                             }
                             else {
                                 const letter = (data.name || "G").charAt(0).toUpperCase();
-                                profileModalAvatar.innerHTML = `<div class="modal-contact-avatar" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:24px; background:var(--dark-blue); color:white; border-radius:50%;">${letter}</div>`;
+                                profileModalAvatar.innerHTML = `<div class="modal-contact-avatar">${letter}</div>`;
                             }
                         }
                     }
@@ -1013,10 +1098,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeProfileSettingsBtn) {
         closeProfileSettingsBtn.addEventListener('click', () => {
             if (profileSettingsModal) profileSettingsModal.classList.remove('active');
-            
+            if (groupAddMemberModal) groupAddMemberModal.classList.remove('active');
             const avatarWrapper = document.querySelector('.profile-avatar-wrapper');
             if (avatarWrapper) avatarWrapper.removeAttribute('data-mode');
-            
             settingsUsername.parentNode.style.display = 'flex';
             settingsFullName.parentNode.style.display = 'flex';
             settingsFullName.parentNode.querySelector('label').textContent = "Full Name";
@@ -1076,7 +1160,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     if(response.ok) {
                         alert("Group profile image updated successfully!");
-                        profileModalAvatar.innerHTML = `<img src="${encodedBase64}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+                        profileModalAvatar.innerHTML = `<img src="${encodedBase64}">`;
                         LoadChatrooms({ preserveActive: true });
                     }
                 }
@@ -1093,7 +1177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const displayList = document.getElementById('modalGroupMembersList');
         if (!section || !displayList) return;
         section.style.display = 'flex';
-        displayList.innerHTML = '<span style="font-size:12px; opacity:0.5;">Loading room members...</span>';
+        displayList.innerHTML = '<span class="archive-empty-state-text">Loading room members...</span>';
 
         try {
             const res = await fetch(`${API_BASE_URL}/details?groupId=${groupId}`);
@@ -1102,28 +1186,82 @@ document.addEventListener('DOMContentLoaded', () => {
                 displayList.innerHTML = ''; 
                 const members = data.membersList ? data.membersList.split(',') : [];
                 const groupOwnerName = data.owner;
+                const addMemberHeaderBtn = document.createElement('button');
+                addMemberHeaderBtn.className = "add-member-trigger-btn";
+                addMemberHeaderBtn.innerHTML = '<i class="fas fa-plus"></i> Add Member from Contacts';
+                addMemberHeaderBtn.addEventListener('click', () => {
+                    openGroupAddMemberModal(groupId);
+                });
+                displayList.appendChild(addMemberHeaderBtn);
                 if (members.length === 0) {
-                    displayList.innerHTML = '<span style="font-size:12px; opacity:0.5;">No members found.</span>';
+                    displayList.innerHTML += '<span class="archive-empty-state-text">No members found.</span>';
                     return;
                 }
                 members.forEach(username => {
                     const isThisUserOwner = (username === groupOwnerName);
                     const rowItem = document.createElement('div');
-                    rowItem.style = "display:flex; justify-content:space-between; align-items:center; font-size:13px; padding: 6px 4px; color: var(--text-white); border-bottom: 1px solid rgba(255,255,255,0.05);";
-                    rowItem.innerHTML = `
-                        <span>
-                            <i class="fas fa-user" style="margin-right:8px; color:${isThisUserOwner ? 'var(--cyan-aqua)' : 'rgba(255,255,255,0.4)'};"></i> 
-                            ${username}
-                        </span> 
-                        ${isThisUserOwner ? '<span style="font-size:11px; opacity:0.8; background:var(--dark-blue); color:white; padding:2px 6px; border-radius:4px; font-weight:bold;">Owner</span>' : '<span style="font-size:11px; opacity:0.4;">Member</span>'}
+                    rowItem.className = 'group-member-row';
+                    
+                    const leftSpan = document.createElement('div');
+                    leftSpan.className = 'left-side';
+                    const iconColor = isThisUserOwner ? 'var(--cyan-aqua)' : 'rgba(255,255,255,0.4)';
+                    leftSpan.innerHTML = `
+                        <i class="fas fa-user" style="color: ${iconColor};"></i> 
+                        ${username}
                     `;
+                    rowItem.appendChild(leftSpan);
+                    
+                    const rightContainer = document.createElement('div');
+                    rightContainer.className = 'right-side';
+                    if (isThisUserOwner) {
+                        rightContainer.innerHTML = '<span class="owner-badge">Owner</span>';
+                    }
+                    else {
+                        const memberLabel = document.createElement('span');
+                        memberLabel.className = 'member-badge';
+                        memberLabel.textContent = "Member";
+                        rightContainer.appendChild(memberLabel);
+                        const removeBtn = document.createElement('button');
+                        removeBtn.className = 'remove-member-btn';
+                        removeBtn.innerHTML = '<i class="fas fa-minus"></i>';
+                        removeBtn.title = `Remove ${username}`;
+                        removeBtn.addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            if (!confirm(`Are you sure you want to remove ${username} from this group?`)) return;
+                            try {
+                                const response = await fetch(`${API_BASE_URL}/group`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        action: "removeMember",
+                                        groupId: groupId,
+                                        memberId: username
+                                    })
+                                });
+                                if (response.ok) {
+                                    alert(`${username} removed successfully!`);
+                                    renderGroupMembers(groupId);
+                                }
+                                else {
+                                    const errData = await response.json();
+                                    alert(`Error: ${errData.error || 'Failed to remove member'}`);
+                                }
+                            }
+                            catch (error) {
+                                console.error('Error removing member:', error);
+                                alert('Network error occurred.');
+                            }
+                        });
+                        rightContainer.appendChild(removeBtn);
+                    }
+                    rowItem.appendChild(rightContainer);
                     displayList.appendChild(rowItem);
                 });
             }
         }
         catch(err) {
             console.error("Error displaying members list view context:", err);
-            displayList.innerHTML = '<span style="font-size:12px; color:#ef4444;">Error parsing items.</span>';
+            displayList.innerHTML = '<span class="archive-empty-state-text" style="color:#ef4444;">Error parsing items.</span>';
         }
     }
 

@@ -123,7 +123,7 @@ public class Chatroom {
                     String groupId = Core.extractJsonValue(body, "groupId");
                     String memberId = Core.extractJsonValue(body, "memberId");
                     Group targetGroup = Core.findGroupById(groupId);
-                    User mem = userRepo.findUserById(memberId);
+                    User mem = userRepo.findUserByAnyField(memberId,"");
                     if (targetGroup != null && mem != null) {
                         targetGroup.leftOrRemove(mem);
                         Core.sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Member removed successfully\"}");
