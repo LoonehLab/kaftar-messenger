@@ -140,6 +140,17 @@ public class Chatroom {
                     Core.sendResponse(exchange, 404, "{\"error\":\"Group not found\"}");
                     return;
                 }
+
+                String action = "";
+                if (query != null && query.contains("action=")) {
+                    action = query.split("action=")[1].split("&")[0];
+                }
+
+                if ("members".equalsIgnoreCase(action)) {
+                    int count = targetGroup.getGroupRepository().getMemberCount();
+                    Core.sendResponse(exchange, 200, "{\"count\":" + count + "}");
+                    return;
+                }
                 Core.sendResponse(exchange, 200, Core.convertMessagesToJson(targetGroup.getMessages()));
             }
 
