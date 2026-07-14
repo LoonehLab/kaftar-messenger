@@ -574,6 +574,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileSettingsModal.classList.add('active');
             }
             try {
+                const detailRes = await fetch(`${API_BASE_URL}/details?userId=${CURRENT_USER_ID}`);
+                if (detailRes.ok) {
+                    const detailData = await detailRes.json();
+                    if (settingsFullName) settingsFullName.value = detailData.fullName || "";
+                    if (settingsBio) settingsBio.value = detailData.bio || "";
+                }
                 const response = await fetch(`${API_BASE_URL}/user/avatar?userId=${CURRENT_USER_ID}`);
                 if (response.ok) {
                     const data = await response.json();
@@ -590,7 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             } catch (err) {
-                console.error("Error loading profile picture into modal:", err);
+                console.error("Error loading profile details into modal:", err);
             }
         });
     }
@@ -719,8 +725,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             else {
-                alert('Other information saved locally! Global update API integration coming soon.');
-                if (profileSettingsModal) profileSettingsModal.classList.remove('active');
+                const payload = {
+                    userId: CURRENT_USER_ID,
+                    fullName: settingsFullName.value.trim(),
+                    bio: settingsBio.value.trim()
+                };
+                try {
+                    const response = await fetch(`${API_BASE_URL}/user/update`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) {
+                        alert("Profile updated successfully!");
+                        if (profileSettingsModal) profileSettingsModal.classList.remove('active');
+                        LoadChatrooms({ preserveActive: true });
+                    }
+                    else alert("Failed to update profile.");
+                }
+                catch(err) {
+                    console.error("Error updating profile:", err);
+                    alert("Network error updating profile.");
+                }
             }
         });
     }
