@@ -267,6 +267,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentRoomName.textContent = chatName;
                 activeChat.type = itemToActivate.getAttribute('data-type');
                 activeChat.targetId = itemToActivate.getAttribute('data-target-id');
+
+                if (activeChat.type === "group") {
+                    loadGroupMembersCount(activeChat.targetId);
+                } else {
+                    document.querySelector(".last-online").textContent = "";
+                }
+
                 const avatarEl = itemToActivate.querySelector('.room-avatar');
                 currentRoomAvatar.innerHTML = avatarEl.innerHTML;
                 if (appContainer) appContainer.classList.add('chat-open');
@@ -350,6 +357,16 @@ document.addEventListener('DOMContentLoaded', () => {
             activeChat.type = type;
             activeChat.targetId = id;
             loadMessages();
+
+            if (type === "group") 
+            {
+                loadGroupMembersCount(id);
+            } 
+            else 
+            {
+                document.querySelector(".last-online").textContent = "";
+            }
+
             setupAutoUpdate();
         });
         chatroomListContainer.appendChild(itemDiv);
@@ -1343,6 +1360,28 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupAutoUpdate() {
         if (updateIntervalId) clearInterval(updateIntervalId);
         updateIntervalId = setInterval(loadMessages, 2000);
+    }
+
+    // =============( Member Count )=============
+    async function loadGroupMembersCount(groupId) {
+        try {
+            const res = await fetch(
+                `${API_BASE_URL}/group?action=members&groupId=${groupId}`
+            );
+
+            if (!res.ok) {
+                console.log("Member count error:", res.status);
+                return;
+            }
+
+            const data = await res.json();
+
+            document.querySelector(".last-online").textContent =
+                `${data.count} members`;
+
+        } catch (err) {
+            console.error("Member count failed:", err);
+        }
     }
 
     // =============( Initialize App )=============

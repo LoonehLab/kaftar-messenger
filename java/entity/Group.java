@@ -157,6 +157,7 @@ public class Group extends Chat
     public List<User> getMembers() { return members; }
     public List<Message> getMessages() { return messages; }
     public User getOwner(){ return owner; }
+    public GroupRepository getGroupRepository(){ return groupRepository; }
 
     public void setName(String name) { this.name = name; }
     public void setAvatar(String avatar){ this.avatar = avatar; }

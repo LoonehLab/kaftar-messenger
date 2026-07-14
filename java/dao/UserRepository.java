@@ -46,6 +46,32 @@ public class UserRepository
       }
    }
 
+   public void changeFullName(String userId ,String newName)
+   {
+      List<User> users = getAllUsers();
+
+      try(FileWriter writer = new FileWriter(filePath , false))
+      {
+         for(int i=0 ; i<users.size() ; i++)
+         {
+            if(userId.equals(users.get(i).getId()))
+            {
+               writer.write(users.get(i).getId()+" , "+users.get(i).getUserName()+" , "+newName+" , "+users.get(i).getPassword()+"\n");
+            }
+
+            else
+            {
+               writer.write(users.get(i).getId()+" , "+users.get(i).getUserName()+" , "+users.get(i).getFullName()+" , "+users.get(i).getPassword()+"\n");
+            }
+         }
+      }
+
+      catch(IOException e)  
+      {
+         e.printStackTrace();
+      }
+   }
+
    private List<User> makeArrayOfAllUsers()
    {
       List<User> users = new ArrayList<>();

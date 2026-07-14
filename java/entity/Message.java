@@ -55,6 +55,7 @@ public class Message
     }
 
     public void setDeleted(boolean isDeleted){ deleted = isDeleted;}
+    public void setEdited(boolean isEdited){ edited = isEdited;}
     public void setId(int id){ this.id = id;}
 
     
