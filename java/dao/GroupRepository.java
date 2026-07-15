@@ -427,5 +427,5 @@ public class GroupRepository
         catch (IOException e) { e.printStackTrace(); }
     }
 
-    public int getMemberCount() { return getArrayOfMembersId().size(); }
+    public int getMemberCount() { return getArrayOfMembersId().size()+1; }
 }

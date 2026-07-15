@@ -53,6 +53,11 @@ public class InformationRepository
             {
             contactFile.createNewFile();
             }
+            File lastSeenFile = new File(folder, "lastSeen.txt");
+            if(!lastSeenFile.exists())
+            {
+            lastSeenFile.createNewFile();
+            }
         }
         catch(IOException e) 
         {
@@ -60,6 +65,44 @@ public class InformationRepository
         }
     }
 
+    public void saveLastSeen(long lastSeen)
+    {
+        File file = new File(userDirectory, "lastSeen.txt");
+        try(FileWriter writer = new FileWriter(file, false))
+        {
+            writer.write(String.valueOf(lastSeen));
+        }
+        catch(IOException e) 
+        {
+        e.printStackTrace();
+        }
+    }
+
+    public long getLastSeen()
+    {
+        long result = 0;
+
+        File file = new File(userDirectory, "lastSeen.txt");
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        {
+            String line;
+            if ((line = reader.readLine()) != null) 
+            {
+                if(!line.isEmpty()) 
+                {
+                    result = Long.parseLong(line);
+                }
+            }
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return result;
+    }
+    
     public void savePv(PV pv)
     {
         File file = new File(userDirectory, "pv.txt");
