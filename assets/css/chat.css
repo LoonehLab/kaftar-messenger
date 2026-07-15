@@ -596,6 +596,53 @@ body {
     cursor: pointer;
 }
 
+.log-toggle-container {
+    display: flex;
+    background: var(--bg-input);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 4px;
+    gap: 4px;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.log-tab-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: none;
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.log-tab-btn:hover {
+    color: var(--text-white);
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.log-tab-btn.active {
+    background: var(--dark-blue);
+    color: var(--text-white);
+    box-shadow: 0 0 8px var(--dark-blue);
+}
+
+#groupLogsList {
+    padding: 4px 8px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+#logDeletedTabBtn.active {
+    background: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+}
+
 .form-group {
     display: flex;
     flex-direction: column;

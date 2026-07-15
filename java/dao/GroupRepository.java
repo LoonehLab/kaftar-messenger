@@ -399,17 +399,16 @@ public class GroupRepository
         return sb.toString();
     }
 
-    public void editMessage(String newText , Message message)
+    public void editMessage(String newText, Message message)
     {
         addEditedMessage(message);
         List<Message> messages = getArrayOfMessages();
-
-        for(int i=0 ; i<messages.size() ; i++)
+        for (Message m : messages)
         {
-            if(message.getId() == (messages.get(i).getId()))
+            if (m.getId() == message.getId())
             {
-                messages.get(i).setText(newText);
-                messages.get(i).setEdited(true);
+                m.setText(newText);
+                m.setEdited(true);
                 break;
             }
         }

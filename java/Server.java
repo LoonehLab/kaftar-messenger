@@ -21,6 +21,7 @@ public class Server {
         Chatroom.setState(server);
         Chatroom.loadPV(server);
         Chatroom.loadGroup(server);
+        Chatroom.loadGroupLogs(server);
         Contacts.Manage(server);
         Messages.Manage(server);
         

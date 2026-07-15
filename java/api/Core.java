@@ -39,12 +39,12 @@ public class Core {
         return groupRepo.findById(groupId);
     }
 
-    protected static String convertMessagesToJson(List<Message> messages) {
+    protected static String convertMessagesToJson(List<Message> messages, boolean isLog) {
         StringBuilder json = new StringBuilder("[");
         boolean first = true;
         for (int i = 0; i < messages.size(); i++) {
             Message m = messages.get(i);
-            if (m.getDeleted()) continue;
+            if (!isLog && m.getDeleted()) continue;
             if (!first) json.append(",");
             first = false;
             String safeText = m.getText().replace("\"", "\\\"").replace("\n", "\\n");

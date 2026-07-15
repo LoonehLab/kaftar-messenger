@@ -30,6 +30,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeGroupAddMemberBtn = document.getElementById('closeGroupAddMemberBtn');
     const groupAddMemberContactsList = document.getElementById('groupAddMemberContactsList');
 
+    const groupLogsModal = document.getElementById('groupLogsModal');
+    const closeGroupLogsBtn = document.getElementById('closeGroupLogsBtn');
+    const groupLogsList = document.getElementById('groupLogsList');
+    const logEditedTabBtn = document.getElementById('logEditedTabBtn');
+    const logDeletedTabBtn = document.getElementById('logDeletedTabBtn');
+    let currentLogTab = 'edited'; // edited | deleted
+
     const messageInput = document.querySelector('.input-container input');
     const messagesContainer = document.querySelector('.messages-container');
     const appContainer = document.querySelector('.app-container');
@@ -1246,12 +1253,32 @@ document.addEventListener('DOMContentLoaded', () => {
                         settingsFullName.readOnly = false;          // Group name
                         if (saveProfileBtn) saveProfileBtn.style.display = 'flex';
                         if (deleteAvatarBtn) deleteAvatarBtn.style.display = 'flex';
+                        const oldHistoryBtn = document.getElementById('openGroupLogsBtn');
+                        if (oldHistoryBtn) oldHistoryBtn.remove();
+                        const historyBtn = document.createElement('button');
+                        historyBtn.id = 'openGroupLogsBtn';
+                        historyBtn.className = 'add-member-trigger-btn';
+                        historyBtn.style.marginTop = '10px';
+                        historyBtn.style.border = '1px dashed #eab308';
+                        historyBtn.style.backgroundColor = 'rgba(234, 179, 8, 0.1)';
+                        historyBtn.style.color = '#f59e0b';
+                        historyBtn.innerHTML = '<i class="fas fa-history"></i> Check Group History (Logs)';
+                        historyBtn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            openGroupLogsWorkflow(activeChat.targetId);
+                        });
+                        const profileForm = document.querySelector('.profile-settings-form');
+                        profileForm.insertBefore(historyBtn, document.getElementById('modalGroupMembersSection'));
                     }
                     else {
                         avatarWrapper.setAttribute('data-mode', 'view-only'); // Hides upload overlay
                         settingsFullName.readOnly = true;
                         if (saveProfileBtn) saveProfileBtn.style.display = 'none';
                         if (deleteAvatarBtn) deleteAvatarBtn.style.display = 'none';
+                        
+                        // Remove history button for non-owners
+                        const oldHistoryBtn = document.getElementById('openGroupLogsBtn');
+                        if (oldHistoryBtn) oldHistoryBtn.remove();
                     }
                     renderGroupMembers(activeChat.targetId);
                 }
@@ -1433,6 +1460,76 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Error displaying members list view context:", err);
             displayList.innerHTML = '<span class="archive-empty-state-text" style="color:#ef4444;">Error parsing items.</span>';
         }
+    }
+
+    // =============( Group Logs Workflow )=============
+    async function openGroupLogsWorkflow(groupId) {
+        if (!groupLogsModal) return;
+        currentLogTab = 'edited';
+        logEditedTabBtn.classList.add('active');
+        logDeletedTabBtn.classList.remove('active');
+        groupLogsModal.classList.add('active');
+        groupLogsModal.style.zIndex = "2010";
+        await fetchAndRenderGroupLogs(groupId);
+    }
+    async function fetchAndRenderGroupLogs(groupId) {
+        if (!groupLogsList) return;
+        groupLogsList.innerHTML = '<div class="modal-loading"><i class="fas fa-spinner fa-spin"></i> Loading group logs...</div>';
+        const endpoint = currentLogTab === 'edited' ? 'edited' : 'deleted';
+        try {
+            const response = await fetch(`${API_BASE_URL}/group/${endpoint}?groupId=${groupId}`);
+            if (!response.ok) throw new Error("Failed to load logs");
+            const logs = await response.json();
+            groupLogsList.innerHTML = '';
+            if (!logs || logs.length === 0) {
+                groupLogsList.innerHTML = `<div class="archive-empty-state-text">No ${currentLogTab} messages found in history.</div>`;
+                return;
+            }
+            logs.forEach(msg => {
+                const date = new Date(msg.timestamp).toLocaleString();
+                const logRow = document.createElement('div');
+                logRow.className = 'group-member-row';
+                logRow.style.flexDirection = 'column';
+                logRow.style.alignItems = 'flex-start';
+                logRow.style.gap = '4px';
+                logRow.style.padding = '10px 6px';
+                logRow.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; width: 100%; font-size: 11px; opacity: 0.6;">
+                        <span><i class="fas fa-user"></i> <b>${msg.senderId}</b></span>
+                        <span><i class="far fa-clock"></i> ${date}</span>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 10px; width: 100%; border-left: 3px solid ${currentLogTab === 'edited' ? 'var(--cyan-aqua)' : '#ef4444'}; word-break: break-all;">
+                        ${msg.text}
+                    </div>
+                `;
+                groupLogsList.appendChild(logRow);
+            });
+        }
+        catch (err) {
+            console.error("Error loading logs:", err);
+            groupLogsList.innerHTML = '<div class="archive-empty-state-text" style="color:#ef4444;">Error fetching group logs.</div>';
+        }
+    }
+    if (closeGroupLogsBtn) {
+        closeGroupLogsBtn.addEventListener('click', () => {
+            groupLogsModal.classList.remove('active');
+        });
+    }
+    if (logEditedTabBtn && logDeletedTabBtn) {
+        logEditedTabBtn.addEventListener('click', () => {
+            if (currentLogTab === 'edited') return;
+            currentLogTab = 'edited';
+            logEditedTabBtn.classList.add('active');
+            logDeletedTabBtn.classList.remove('active');
+            fetchAndRenderGroupLogs(activeChat.targetId);
+        });
+        logDeletedTabBtn.addEventListener('click', () => {
+            if (currentLogTab === 'deleted') return;
+            currentLogTab = 'deleted';
+            logDeletedTabBtn.classList.add('active');
+            logEditedTabBtn.classList.remove('active');
+            fetchAndRenderGroupLogs(activeChat.targetId);
+        });
     }
 
     // =============( Fetch Contacts )=============

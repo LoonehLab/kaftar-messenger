@@ -161,6 +161,24 @@
         </div>
     </div>
 
+    <div id="groupLogsModal" class="modal-overlay">
+        <div class="modal-box" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3>Group Edit & Delete Logs</h3>
+                <button id="closeGroupLogsBtn" class="modal-close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="log-toggle-container">
+                <button id="logEditedTabBtn" class="log-tab-btn active">Edited</button>
+                <button id="logDeletedTabBtn" class="log-tab-btn">Deleted</button>
+            </div>
+            <div class="modal-divider" style="margin: 12px 0;"></div>
+            <div id="groupLogsList" class="modal-contacts-list" style="max-height: 300px;">
+            </div>
+        </div>
+    </div>
+
     <div id="messageContextMenu" class="context-menu" style="display: none; position: absolute; z-index: 2000;">
         <button id="ctxEditBtn"><i class="fas fa-edit"></i> Edit</button>
         <button id="ctxDeleteBtn" class="delete-item"><i class="fas fa-trash-alt"></i> Delete</button>

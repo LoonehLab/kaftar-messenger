@@ -47,7 +47,7 @@ public class Chatroom {
                     return;
                 }
                 PV targetPv = Core.findOrCreatePV(u1, u2);
-                Core.sendResponse(exchange, 200, Core.convertMessagesToJson(targetPv.messages()));
+                Core.sendResponse(exchange, 200, Core.convertMessagesToJson(targetPv.messages(),false));
             }
 
             else if ("DELETE".equalsIgnoreCase(method)) { // Delete PV
@@ -155,7 +155,7 @@ public class Chatroom {
                     Core.sendResponse(exchange, 200, "{\"count\":" + count + "}");
                     return;
                 }
-                Core.sendResponse(exchange, 200, Core.convertMessagesToJson(targetGroup.getMessages()));
+                Core.sendResponse(exchange, 200, Core.convertMessagesToJson(targetGroup.getMessages(),false));
             }
 
             else if ("DELETE".equalsIgnoreCase(method)) { // Delete Group
@@ -177,6 +177,50 @@ public class Chatroom {
                 } 
                 else Core.sendResponse(exchange, 404, "{\"error\":\"Group not found\"}");
             }
+        });
+    }
+
+    public static void loadGroupLogs(HttpServer server) {
+        server.createContext("/api/group/deleted", exchange -> {
+            Core.handleCORS(exchange);
+            if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) return;
+            if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String query = exchange.getRequestURI().getQuery();
+                String groupId = "";
+                if (query != null && query.contains("groupId=")) {
+                    String afterGroupId = query.split("groupId=")[1];
+                    groupId = afterGroupId.split("&")[0];
+                }
+                Group targetGroup = Core.findGroupById(groupId);
+                if (targetGroup == null) {
+                    Core.sendResponse(exchange, 404, "{\"error\":\"Group not found\"}");
+                    return;
+                }
+                List<Message> allDeleted = targetGroup.getGroupRepository().getArrayOfDeletedMessages();
+                Core.sendResponse(exchange, 200, Core.convertMessagesToJson(allDeleted, true));
+            }
+            else Core.sendResponse(exchange, 405, "Method Not Allowed");
+        });
+
+        server.createContext("/api/group/edited", exchange -> {
+            Core.handleCORS(exchange);
+            if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) return;
+            if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String query = exchange.getRequestURI().getQuery();
+                String groupId = "";
+                if (query != null && query.contains("groupId=")) {
+                    String afterGroupId = query.split("groupId=")[1];
+                    groupId = afterGroupId.split("&")[0];
+                }
+                Group targetGroup = Core.findGroupById(groupId);
+                if (targetGroup == null) {
+                    Core.sendResponse(exchange, 404, "{\"error\":\"Group not found\"}");
+                    return;
+                }
+                List<Message> allEdited = targetGroup.getGroupRepository().getArrayOfEditedMessages();
+                Core.sendResponse(exchange, 200, Core.convertMessagesToJson(allEdited, true));
+            }
+            else Core.sendResponse(exchange, 405, "Method Not Allowed");
         });
     }
 
