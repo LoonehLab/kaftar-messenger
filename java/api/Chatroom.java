@@ -34,13 +34,14 @@ public class Chatroom {
                 PV targetPv = Core.findOrCreatePV(sender, receiver);
                 Message newMessage = new Message(0, senderId, receiverId, text, System.currentTimeMillis(), false, false);
                 targetPv.send(newMessage);
+                receiver.getInformationRepository().unreadMessagesPlusOne(targetPv);
                 Core.sendResponse(exchange, 201, "{\"status\":\"success\",\"message\":\"Message sent to PV\"}");
             } 
 
             else if ("GET".equalsIgnoreCase(method)) { // All Messages & Search
                 String query = exchange.getRequestURI().getQuery();
                 String user1 = query != null && query.contains("user1=") ? query.split("user1=")[1].split("&")[0] : "";
-                String user2 = query != null && query.contains("user2=") ? query.split("user2=")[1].split("&")[0] : ""; // اصلاح جزیی اسپلیت
+                String user2 = query != null && query.contains("user2=") ? query.split("user2=")[1].split("&")[0] : "";
                 String searchQuery = "";
                 if (query != null && query.contains("search=")) { // Search
                     searchQuery = query.split("search=")[1].split("&")[0];
@@ -58,6 +59,7 @@ public class Chatroom {
                     return;
                 }
                 PV targetPv = Core.findOrCreatePV(u1, u2);
+                u1.getInformationRepository().readMessages(targetPv);
                 List<Message> allMessages = targetPv.messages();
                 if (searchQuery != null && !searchQuery.trim().isEmpty()) {
                     List<Message> filteredMessages = new ArrayList<>();
@@ -131,6 +133,9 @@ public class Chatroom {
                     }
                     Message groupMessage = new Message(0, senderId, groupId, text, System.currentTimeMillis(), false, false);
                     targetGroup.send(groupMessage);
+                    for (User member : targetGroup.getMembers())
+                        if (sender != null && !member.getId().equals(sender.getId()))
+                            member.getInformationRepository().unreadMessagesPlusOne(targetGroup);
                     Core.sendResponse(exchange, 201, "{\"status\":\"success\",\"message\":\"Message sent to group\"}");
                 }
 
@@ -164,6 +169,7 @@ public class Chatroom {
             else if ("GET".equalsIgnoreCase(method)) { // Group Messages & Search
                 String query = exchange.getRequestURI().getQuery();
                 String groupId = query != null && query.contains("groupId=") ? query.split("groupId=")[1].split("&")[0] : "";
+                String userId = query != null && query.contains("userId=") ? query.split("userId=")[1].split("&")[0] : "";
                 Group targetGroup = Core.findGroupById(groupId);
                 if (targetGroup == null) {
                     Core.sendResponse(exchange, 404, "{\"error\":\"Group not found\"}");
@@ -177,6 +183,13 @@ public class Chatroom {
                     Core.sendResponse(exchange, 200, "{\"count\":" + count + "}");
                     return;
                 }
+                if (!userId.isEmpty()) {
+                    User currentUser = userRepo.findUserById(userId);
+                    if (currentUser != null) {
+                        currentUser.getInformationRepository().readMessages(targetGroup);
+                    }
+                }
+
                 String searchQuery = "";
                 if (query != null && query.contains("search=")) {
                     searchQuery = query.split("search=")[1].split("&")[0];

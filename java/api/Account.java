@@ -133,31 +133,49 @@ public class Account {
                 // Private Chats
                 json.append("\"pvs\":[");
                 List<String> pvIds = currentUser.getInformationRepository().getPvIds();
+                boolean firstPv = true;
                 for(int i=0 ; i<pvIds.size() ; i++) {
                     String targetId = pvIds.get(i);
                     User target = userRepo.findUserById(targetId);
                     if(target == null) continue;
+                    if(!firstPv) json.append(",");
+                    firstPv = false;
                     String targetAvatar = target.getInformationRepository().getAvatar();
                     if(targetAvatar == null) targetAvatar = "";
                     String pvState = currentUser.getInformationRepository().getChatState(target.getId(), "pv");
-                    json.append(String.format("{\"targetId\":\"%s\",\"targetName\":\"%s\",\"profilePicture\":\"%s\",\"state\":\"%s\"}", 
-                        target.getId(), target.getUserName(), targetAvatar, pvState));
-                    if(i < pvIds.size()-1) json.append(",");
+                    PV tempPv = new PV(currentUser, target); 
+                    int unreadCount = 0;
+                    try {
+                        unreadCount = currentUser.getInformationRepository().getUreadMessagesCount(tempPv);
+                    }
+                    catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    json.append(String.format("{\"targetId\":\"%s\",\"targetName\":\"%s\",\"profilePicture\":\"%s\",\"state\":\"%s\",\"unreadCount\":%d}", 
+                        target.getId(), target.getUserName(), targetAvatar, pvState, unreadCount));
                 }
                 json.append("],");
 
                 // Group Chats
                 json.append("\"groups\":[");
                 List<String> groupIds = currentUser.getInformationRepository().getGroupIds();
-                boolean first = true;
+                boolean firstGroup = true;
                 for(String groupId : groupIds) {
                     Group g = groupRepo.findById(groupId);
                     if(g == null) continue;
-                    if(!first) json.append(",");
-                    first = false;
+                    if(!firstGroup) json.append(",");
+                    firstGroup = false;
                     String groupState = currentUser.getInformationRepository().getChatState(g.getId(), "group");
-                    json.append(String.format("{\"groupId\":\"%s\",\"groupName\":\"%s\",\"state\":\"%s\"}", 
-                        g.getId(), g.getName(), groupState));
+                    int unreadCount = 0;
+                    try {
+                        unreadCount = currentUser.getInformationRepository().getUreadMessagesCount(g);
+                    }
+                    catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    json.append(String.format("{\"groupId\":\"%s\",\"groupName\":\"%s\",\"state\":\"%s\",\"unreadCount\":%d}", 
+                        g.getId(), g.getName(), groupState, unreadCount));
                 }
                 json.append("]");
                 json.append("}");

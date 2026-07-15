@@ -183,7 +183,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     type: 'pv',
                     profilePicture: pv.profilePicture || null,
                     isArchived: pv.chatState === 'archived' || pv.state === 'archived', 
-                    isPinned: pv.chatState === 'pinned' || pv.state === 'pinned'
+                    isPinned: pv.chatState === 'pinned' || pv.state === 'pinned',
+                    unreadCount: pv.unreadCount || 0
                 }))
             );
 
@@ -208,7 +209,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         type: 'group',
                         profilePicture: picture,
                         isArchived: group.chatState === 'archived' || group.state === 'archived',
-                        isPinned: group.chatState === 'pinned' || group.state === 'pinned'
+                        isPinned: group.chatState === 'pinned' || group.state === 'pinned',
+                        unreadCount: group.unreadCount || 0
                     };
                 })
             );
@@ -245,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const unpinnedRooms = filteredRooms.filter(room => !room.isPinned);
 
             pinnedRooms.forEach(room => {
-                createChatroomItemHTML(room.id, room.name, room.type, room.profilePicture, room.isPinned);
+                createChatroomItemHTML(room.id, room.name, room.type, room.profilePicture, room.isPinned, room.unreadCount);
             });
             if (savedMessagesRoom && !isViewingArchive) {
                 createChatroomItemHTML(
@@ -257,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 );
             }
             unpinnedRooms.forEach(room => {
-                createChatroomItemHTML(room.id, room.name, room.type, room.profilePicture, room.isPinned);
+                createChatroomItemHTML(room.id, room.name, room.type, room.profilePicture, room.isPinned, room.unreadCount);
             });
             let itemToActivate = null;
             if (options.selectTargetId && options.selectType) {
@@ -334,16 +336,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // =============( Create Chatroom )=============
-    function createChatroomItemHTML(id, name, type, avatarBase64 = null, isPinned = false) {
+    function createChatroomItemHTML(id, name, type, avatarBase64 = null, isPinned = false, unreadCount = 0) {
         const itemDiv = document.createElement('div');
         itemDiv.classList.add('chatroom-item');
         itemDiv.setAttribute('data-type', type);
         itemDiv.setAttribute('data-target-id', id);
         const pinIconHTML = isPinned ? `<i class="fas fa-thumbtack pin-icon pinned-chat-indicator"></i>` : '';
+        const unreadHTML = unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : '';
         
         itemDiv.innerHTML = `
             <div class="room-info">
-                <div class="room-avatar">${getAvatarHTML(name, avatarBase64)}</div>
+                <div class="room-avatar-wrapper" style="position: relative; display: inline-block;">
+                    <div class="room-avatar">${getAvatarHTML(name, avatarBase64)}</div>
+                    ${unreadHTML}
+                </div>
                 <span class="room-name">${name}</span>
             </div>
             <div class="chatroom-item-actions">
@@ -361,6 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
             activeChat.type = type;
             activeChat.targetId = id;
             loadMessages();
+            LoadChatrooms({ preserveActive: true }); 
 
             if (activeChat.type === "group") {
                 loadGroupMembersCount(activeChat.targetId);
@@ -409,7 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (activeChat.type === 'pv') {
             url = `${API_BASE_URL}/pv?user1=${CURRENT_USER_ID}&user2=${activeChat.targetId}`;
         } else if (activeChat.type === 'group') {
-            url = `${API_BASE_URL}/group?groupId=${activeChat.targetId}`;
+            url = `${API_BASE_URL}/group?groupId=${activeChat.targetId}&userId=${CURRENT_USER_ID}`;
         }
         try {
             const response = await fetch(url);
@@ -574,7 +581,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (activeChat.type === 'pv')
                 searchApiUrl = `${API_BASE_URL}/pv?user1=${CURRENT_USER_ID}&user2=${activeChat.targetId}&search=${encodeURIComponent(query)}`;
             else if (activeChat.type === 'group')
-                searchApiUrl = `${API_BASE_URL}/group?groupId=${activeChat.targetId}&search=${encodeURIComponent(query)}`;
+                searchApiUrl = `${API_BASE_URL}/group?groupId=${activeChat.targetId}&userId=${CURRENT_USER_ID}&search=${encodeURIComponent(query)}`;
             try {
                 const res = await fetch(searchApiUrl);
                 if (!res.ok) {
