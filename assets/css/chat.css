@@ -760,7 +760,10 @@ body {
 }
 
 .message.incoming {
+    display: flex;
     justify-content: flex-start;
+    align-items: flex-end;
+    gap: 8px;
 }
 
 .message.incoming .message-bubble {
@@ -769,6 +772,33 @@ body {
     border: 1px solid var(--msg-incoming-border);
     border-radius: 15px 15px 15px 0;
     box-shadow: 0 0 10px var(--msg-incoming-shadow);
+}
+
+.message-sender-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--dark-blue), var(--cyan-aqua));
+    border: 1px solid var(--border-light);
+    box-shadow: 0 0 5px rgba(0, 240, 255, 0.15);
+}
+
+.msg-sender-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.msg-avatar-fallback {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--text-white);
+    text-transform: uppercase;
 }
 
 .message.outgoing {

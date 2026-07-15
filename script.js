@@ -397,7 +397,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 return;
             }
-            messages.forEach(msg => {
+            const avatarCache = new Map();
+            for (const msg of messages) {
                 const messageDiv = document.createElement('div');
                 messageDiv.setAttribute('data-msg-id', msg.id);
                 messageDiv.addEventListener('contextmenu', (e) => {
@@ -412,12 +413,54 @@ document.addEventListener('DOMContentLoaded', () => {
                 messageDiv.classList.add('message');
                 if (msg.senderId === CURRENT_USER_ID) {
                     messageDiv.classList.add('outgoing');
+                    messageDiv.innerHTML = `<div class="message-bubble">${msg.text}</div>`;
                 } else {
                     messageDiv.classList.add('incoming');
+                    const avatarContainerId = `avatar-${msg.id}`;
+                    messageDiv.innerHTML = `
+                        <div class="message-sender-avatar" id="${avatarContainerId}">
+                            <div class="msg-avatar-fallback">?</div>
+                        </div>
+                        <div class="message-bubble">${msg.text}</div>
+                    `;
+                    if (activeChat.type === 'group') {
+                        (async () => {
+                            let avatarBase64 = "";
+                            if (avatarCache.has(msg.senderId)) {
+                                avatarBase64 = avatarCache.get(msg.senderId);
+                            } else {
+                                try {
+                                    const avatarRes = await fetch(`${API_BASE_URL}/user/avatar?userId=${msg.senderId}`);
+                                    if (avatarRes.ok) {
+                                        const avatarData = await avatarRes.json();
+                                        avatarBase64 = avatarData.profilePicture || "";
+                                        avatarCache.set(msg.senderId, avatarBase64);
+                                    }
+                                }
+                                catch (err) {
+                                    console.error("Error fetching sender avatar:", err);
+                                }
+                            }
+                            const container = document.getElementById(avatarContainerId);
+                            if (container) {
+                                if (avatarBase64 && avatarBase64.trim() !== "") {
+                                    container.innerHTML = `<img src="${avatarBase64}" class="msg-sender-img">`;
+                                }
+                                else {
+                                    container.innerHTML = `<div class="msg-avatar-fallback">${msg.senderId.charAt(0).toUpperCase()}</div>`;
+                                }
+                            }
+                        })();
+                    }
+                    else {
+                        setTimeout(() => {
+                            const container = document.getElementById(avatarContainerId);
+                            if (container) container.style.display = 'none';
+                        }, 0);
+                    }
                 }
-                messageDiv.innerHTML = `<div class="message-bubble">${msg.text}</div>`;
                 messagesContainer.appendChild(messageDiv);
-            });
+            }
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         } catch (error) {
             console.error('Error loading messages:', error);
