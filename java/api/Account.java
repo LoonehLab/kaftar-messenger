@@ -44,6 +44,7 @@ public class Account {
                     }
                     String hashedPass = PasswordHasher.hashPassword(pass);
                     if (existingUser.getPassword().equals(hashedPass)) {
+                        existingUser.updateLastSeen();
                         loginAttempts.remove(username);
                         lockTimeouts.remove(username);
                         Core.sendResponse(exchange, 200, String.format("{\"status\":\"success\",\"message\":\"Login successful\",\"id\":\"%s\"}", existingUser.getId()));
@@ -119,6 +120,7 @@ public class Account {
                     Core.sendResponse(exchange, 404, "{\"error\":\"User not found\"}");
                     return;
                 }
+                currentUser.updateLastSeen();
                 StringBuilder json = new StringBuilder();
                 json.append("{");
                 
@@ -163,6 +165,33 @@ public class Account {
                 Core.sendResponse(exchange, 200, json.toString());
             }
             else Core.sendResponse(exchange, 405, "Method Not Allowed");
+        });
+
+        server.createContext("/api/user/info", exchange -> {
+            Core.handleCORS(exchange);
+            if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) return;
+
+            if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+
+                String query = exchange.getRequestURI().getQuery();
+                String userId = query != null && query.contains("userId=")
+                        ? query.split("userId=")[1]
+                        : "";
+
+                User user = userRepo.findUserById(userId);
+
+                if (user == null) {
+                    Core.sendResponse(exchange,404,"{\"error\":\"User not found\"}");
+                    return;
+                }
+
+                String json = String.format(
+                    "{\"lastSeen\":%d}",
+                    user.getInformationRepository().getLastSeen()
+                );
+
+                Core.sendResponse(exchange,200,json);
+            }
         });
     }
 

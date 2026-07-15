@@ -13,6 +13,7 @@ public class User
     private String avatar;
     private String bio;
     private String phoneNumber;
+    private long lastSeen;
     //private Security security;
     
     private List<PV> pv;
@@ -53,7 +54,21 @@ public class User
         receivedMessages = new ArrayList<>();
         contacts = new ArrayList<>();
         messageOfSavedMessage = new ArrayList<>();
-        if(!loadMode) informationRepository = new InformationRepository(this);
+
+        if(!loadMode) {
+            this.lastSeen = System.currentTimeMillis();
+            informationRepository = new InformationRepository(this);
+        }
+
+        if (loadMode) {
+            long savedLastSeen = getInformationRepository().getLastSeen();
+
+            if (savedLastSeen != 0) {
+                this.lastSeen = savedLastSeen;
+            } else {
+                this.lastSeen = System.currentTimeMillis();
+            }
+        }
     }
 
     public void addGroup(Group g)
@@ -162,6 +177,7 @@ public class User
     public List<PV> getPv(){ return pv; }
     public List<Group> getGroups(){ return groups; }
     public List<User> getContacts(){ return contacts; }
+    public long getLastSeen() { return lastSeen; }
     public InformationRepository getInformationRepository()
     {
         if(informationRepository == null)
@@ -176,4 +192,9 @@ public class User
     public void setAvatar(String avatar) { this.avatar = avatar; }
     public void setBio(String bio){ this.bio = bio; }
     public void setPhoneNumber(String phoneNumber){ this.phoneNumber = phoneNumber; }
+    public void updateLastSeen() 
+    {
+        this.lastSeen = System.currentTimeMillis();
+        getInformationRepository().saveLastSeen(lastSeen);
+    }
 }

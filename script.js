@@ -271,7 +271,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (activeChat.type === "group") {
                     loadGroupMembersCount(activeChat.targetId);
                 } else {
-                    document.querySelector(".last-online").textContent = "";
+
+                    const lastOnline = document.querySelector(".last-online");
+
+                    fetch(`${API_BASE_URL}/user/info?userId=${activeChat.targetId}`)
+                        .then(res => res.json())
+                        .then(data => {
+
+                            if (!data.lastSeen) {
+                                lastOnline.textContent = "";
+                                return;
+                            }
+
+                            const date = new Date(data.lastSeen);
+
+                            const hour = String(date.getHours()).padStart(2, "0");
+                            const minute = String(date.getMinutes()).padStart(2, "0");
+
+                            lastOnline.textContent = `Last seen at ${hour}:${minute}`;
+                        })
+                        .catch(err => {
+                            console.error("Failed to load last seen:", err);
+                            lastOnline.textContent = "";
+                        });
                 }
 
                 const avatarEl = itemToActivate.querySelector('.room-avatar');
@@ -364,7 +386,28 @@ document.addEventListener('DOMContentLoaded', () => {
             } 
             else 
             {
-                document.querySelector(".last-online").textContent = "";
+                const lastOnline = document.querySelector(".last-online");
+
+                fetch(`${API_BASE_URL}/user/info?userId=${id}`)
+                    .then(res => res.json())
+                    .then(data => {
+
+                        if (!data.lastSeen) {
+                            lastOnline.textContent = "";
+                            return;
+                        }
+
+                        const date = new Date(data.lastSeen);
+
+                        const hour = String(date.getHours()).padStart(2, "0");
+                        const minute = String(date.getMinutes()).padStart(2, "0");
+
+                        lastOnline.textContent = `Last seen ${hour}:${minute}`;
+                    })
+                    .catch(err => {
+                        console.error("Last seen error:", err);
+                        lastOnline.textContent = "";
+                    });
             }
 
             setupAutoUpdate();

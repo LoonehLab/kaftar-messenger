@@ -25,6 +25,7 @@ public class Chatroom {
                 String receiverId = Core.extractJsonValue(body, "receiverId");
                 String text = Core.extractJsonValue(body, "text");
                 User sender = userRepo.findUserById(senderId);
+                sender.updateLastSeen();
                 User receiver = userRepo.findUserById(receiverId);
                 if (sender == null || receiver == null) {
                     Core.sendResponse(exchange, 404, "{\"error\":\"Sender or Receiver not found\"}");
@@ -99,6 +100,12 @@ public class Chatroom {
                     String groupId = Core.extractJsonValue(body, "groupId");
                     String senderId = Core.extractJsonValue(body, "senderId");
                     String text = Core.extractJsonValue(body, "text");
+
+                    User sender = userRepo.findUserById(senderId);
+                    if (sender != null) {
+                        sender.updateLastSeen();
+                    }
+
                     Group targetGroup = Core.findGroupById(groupId);
                     if (targetGroup == null) {
                         Core.sendResponse(exchange, 404, "{\"error\":\"Group not found\"}");
