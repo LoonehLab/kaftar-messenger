@@ -102,6 +102,153 @@ public class InformationRepository
 
         return result;
     }
+
+    public void unreadMessagesPlusOne(Chat chat)
+    {
+        String fileName = "";
+        int count = 0;
+
+        if(chat instanceof PV)
+        {
+            fileName = "pv.txt";
+            File file = new File(userDirectory, fileName);
+            PV pv = (PV)chat;
+            List<String> lines = new ArrayList<>();
+            String targetId = (pv.getFirstPerson().getId()).equals(user.getId()) ? pv.getSecondPerson().getId() : pv.getFirstPerson().getId();
+            if (file.exists()) 
+            {
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) 
+                {
+                    String line;
+                    while ((line = reader.readLine()) != null) 
+                    {
+                        String[] parts = line.split(":");
+                        if(parts[0].equals(targetId))
+                        {
+                            count = Integer.parseInt((parts[1].split(","))[1])+1;
+                            String[] help = line.split(",");
+                            lines.add(help[0]+","+count);
+                        }
+
+                        else
+                        {
+                            lines.add(line);
+                        }
+                    }
+
+                    try(FileWriter writer = new FileWriter(file , false))
+                    {
+                        for(String v : lines)
+                        {
+                            writer.write(v+"\n");
+                        }
+                    }
+                    catch(IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                catch(IOException e) { e.printStackTrace(); }
+            }
+        }
+
+        else
+        {
+            fileName = "group.txt";
+            File file = new File(userDirectory, fileName);
+            Group group = (Group)chat;
+            List<String> lines = new ArrayList<>();
+            String targetId = group.getId();
+            if (file.exists()) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) 
+                {
+                    String line;
+                    while ((line = reader.readLine()) != null) 
+                    {
+                        String[] parts = line.split(":");
+                        if(parts[0].equals(targetId))
+                        {
+                            count = Integer.parseInt((parts[1].split(","))[1])+1;
+                            String[] help = line.split(",");
+                            lines.add(help[0]+","+count);
+                        }
+
+                        else
+                        {
+                            lines.add(line);
+                        }
+                    }
+
+                    try(FileWriter writer = new FileWriter(file , false))
+                    {
+                        for(String v : lines)
+                        {
+                            writer.write(v+"\n");
+                        }
+                    }
+                    catch(IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+                catch(IOException e) { e.printStackTrace(); }
+            }
+        }
+    }
+
+    public int getUreadMessagesCount(Chat chat)
+    {
+        String fileName = "";
+
+        if(chat instanceof PV)
+        {
+            fileName = "pv.txt";
+            File file = new File(userDirectory, fileName);
+            PV pv = (PV)chat;
+            String targetId = (pv.getFirstPerson().getId()).equals(user.getId()) ? pv.getSecondPerson().getId() : pv.getFirstPerson().getId();
+            if (file.exists()) 
+            {
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) 
+                {
+                    String line;
+                    while ((line = reader.readLine()) != null) 
+                    {
+                        String[] parts = line.split(":");
+                        if(parts[0].equals(targetId))
+                        {
+                            return Integer.parseInt((parts[1].split(","))[1])+1;
+                        }
+                    }
+                }
+                catch(IOException e) { e.printStackTrace(); }
+            }
+        }
+
+        else
+        {
+            fileName = "group.txt";
+            File file = new File(userDirectory, fileName);
+            Group group = (Group)chat;
+            String targetId = group.getId();
+            if (file.exists()) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(file))) 
+                {
+                    String line;
+                    while ((line = reader.readLine()) != null) 
+                    {
+                        String[] parts = line.split(":");
+                        if(parts[0].equals(targetId))
+                        {
+                            return Integer.parseInt((parts[1].split(","))[1])+1;
+                        }
+                    }
+                }
+                catch(IOException e) { e.printStackTrace(); }
+            }
+        }
+
+        return 0;
+    }
     
     public void savePv(PV pv)
     {
@@ -110,17 +257,14 @@ public class InformationRepository
         {
             if(pv.getFirstPerson() == user)
             {
-                writer.write(pv.getSecondPerson().getId()+":normal\n");
+                writer.write(pv.getSecondPerson().getId()+":normal,0\n");
             }
             else if(pv.getSecondPerson() == user)
             {
-                writer.write(pv.getFirstPerson().getId()+":normal\n");
+                writer.write(pv.getFirstPerson().getId()+":normal,0\n");
             }
         }
-        catch(IOException e) 
-        {
-        e.printStackTrace();
-        }
+        catch(IOException e) { e.printStackTrace(); }
     }
 
     public void saveGroup(Group group)
@@ -128,7 +272,7 @@ public class InformationRepository
         File file = new File(userDirectory, "group.txt");
         try(FileWriter writer = new FileWriter(file, true))
         {
-            writer.write(group.getId()+":normal\n");
+            writer.write(group.getId()+":normal,0\n");
         }
         catch(IOException e) 
         {
@@ -183,7 +327,8 @@ public class InformationRepository
                 String line;
                 while ((line = reader.readLine()) != null) {
                     if (line.startsWith(chatId + ":")) {
-                        lines.add(chatId + ":" + state);
+                        String[] parts = line.split(",");
+                        lines.add(chatId + ":" + state+","+parts[1]);
                         found = true;
                     } else if (!line.isEmpty()) {
                         lines.add(line);
@@ -194,7 +339,7 @@ public class InformationRepository
                 e.printStackTrace();
             }
         }
-        if (!found) lines.add(chatId + ":" + state);
+        if (!found){ lines.add(chatId + ":" + state+","+"0"); }
         try (FileWriter writer = new FileWriter(file, false)) {
             for (String l : lines) writer.write(l + "\n");
             }
@@ -210,9 +355,14 @@ public class InformationRepository
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null)
+            {
                 if (line.startsWith(chatId + ":"))
-                    return line.split(":")[1].trim();
+                {
+                    String[] part = line.split(":");
+                    return part[1].split(",")[0].trim();
                 }
+            }
+        }
         catch (IOException e) {
             e.printStackTrace();
         }
