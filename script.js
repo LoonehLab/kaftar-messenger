@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 activeChat.type = itemToActivate.getAttribute('data-type');
                 activeChat.targetId = itemToActivate.getAttribute('data-target-id');
 
-                if (activeChat.type === "group") {
+                /*if (activeChat.type === "group") {
                     loadGroupMembersCount(activeChat.targetId);
                 } else {
 
@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             console.error("Failed to load last seen:", err);
                             lastOnline.textContent = "";
                         });
-                }
+                }*/
 
                 const avatarEl = itemToActivate.querySelector('.room-avatar');
                 currentRoomAvatar.innerHTML = avatarEl.innerHTML;
@@ -391,35 +391,44 @@ document.addEventListener('DOMContentLoaded', () => {
             activeChat.targetId = id;
             loadMessages();
 
-            if (type === "group") 
-            {
-                loadGroupMembersCount(id);
-            } 
-            else 
-            {
-                const lastOnline = document.querySelector(".last-online");
+            if (activeChat.type === "group") {
+                    loadGroupMembersCount(activeChat.targetId);
+                } else {
 
-                fetch(`${API_BASE_URL}/user/info?userId=${id}`)
-                    .then(res => res.json())
-                    .then(data => {
+                    const lastOnline = document.querySelector(".last-online");
 
-                        if (!data.lastSeen) {
-                            lastOnline.textContent = "";
-                            return;
-                        }
-
-                        const date = new Date(data.lastSeen);
-
-                        const hour = String(date.getHours()).padStart(2, "0");
-                        const minute = String(date.getMinutes()).padStart(2, "0");
-
-                        lastOnline.textContent = `Last seen ${hour}:${minute}`;
-                    })
-                    .catch(err => {
-                        console.error("Last seen error:", err);
+                    // Saved Messages
+                    if (activeChat.targetId == CURRENT_USER_ID) {
                         lastOnline.textContent = "";
-                    });
-            }
+                        return;
+                    }
+
+                    fetch(`${API_BASE_URL}/user/info?userId=${activeChat.targetId}`)
+                        .then(res => res.json())
+                        .then(data => {
+
+                            if (data.isOnline === true) {
+                                lastOnline.textContent = "Online";
+                                return;
+                            }
+
+                            if (!data.lastSeen) {
+                                lastOnline.textContent = "";
+                                return;
+                            }
+
+                            const date = new Date(data.lastSeen);
+
+                            const hour = String(date.getHours()).padStart(2, "0");
+                            const minute = String(date.getMinutes()).padStart(2, "0");
+
+                            lastOnline.textContent = `Last seen at ${hour}:${minute}`;
+                        })
+                        .catch(err => {
+                            console.error("Failed to load last seen:", err);
+                            lastOnline.textContent = "";
+                        });
+                }
 
             setupAutoUpdate();
         });
