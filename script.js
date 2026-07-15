@@ -457,14 +457,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     messageDiv.innerHTML = `<div class="message-bubble">${msg.text}</div>`;
                 } else {
                     messageDiv.classList.add('incoming');
-                    const avatarContainerId = `avatar-${msg.id}`;
-                    messageDiv.innerHTML = `
-                        <div class="message-sender-avatar" id="${avatarContainerId}">
-                            <div class="msg-avatar-fallback">?</div>
-                        </div>
-                        <div class="message-bubble">${msg.text}</div>
-                    `;
                     if (activeChat.type === 'group') {
+                        const avatarContainerId = `avatar-${msg.id}`;
+                        messageDiv.innerHTML = `
+                            <div class="message-sender-avatar" id="${avatarContainerId}">
+                                <div class="msg-avatar-fallback">?</div>
+                            </div>
+                            <div class="message-bubble">${msg.text}</div>
+                        `;
                         (async () => {
                             let avatarBase64 = "";
                             if (avatarCache.has(msg.senderId)) {
@@ -494,10 +494,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         })();
                     }
                     else {
-                        setTimeout(() => {
-                            const container = document.getElementById(avatarContainerId);
-                            if (container) container.style.display = 'none';
-                        }, 0);
+                        messageDiv.innerHTML = `<div class="message-bubble">${msg.text}</div>`;
                     }
                 }
                 messagesContainer.appendChild(messageDiv);
@@ -1290,6 +1287,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (activeChat.type === 'pv') {
                     document.getElementById('modalTitle').textContent = "User Profile"; 
+                    const oldHistoryBtn = document.getElementById('openGroupLogsBtn');
+                    if (oldHistoryBtn) oldHistoryBtn.remove();
                     avatarWrapper.setAttribute('data-mode', 'view-only'); // Locks avatar updates
                     usernameGroup.style.display = 'flex';
                     fullNameGroup.style.display = 'flex';
@@ -1397,6 +1396,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeProfileSettingsBtn) {
         closeProfileSettingsBtn.addEventListener('click', () => {
             if (profileSettingsModal) profileSettingsModal.classList.remove('active');
+            const oldHistoryBtn = document.getElementById('openGroupLogsBtn');
+            if (oldHistoryBtn) oldHistoryBtn.remove();
             if (groupAddMemberModal) groupAddMemberModal.classList.remove('active');
             const avatarWrapper = document.querySelector('.profile-avatar-wrapper');
             if (avatarWrapper) avatarWrapper.removeAttribute('data-mode');
