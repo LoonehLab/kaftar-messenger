@@ -274,9 +274,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const lastOnline = document.querySelector(".last-online");
 
+                    // Saved Messages
+                    if (activeChat.targetId == CURRENT_USER_ID) {
+                        lastOnline.textContent = "";
+                        return;
+                    }
+
                     fetch(`${API_BASE_URL}/user/info?userId=${activeChat.targetId}`)
                         .then(res => res.json())
                         .then(data => {
+
+                            if (data.isOnline === true) {
+                                lastOnline.textContent = "Online";
+                                return;
+                            }
 
                             if (!data.lastSeen) {
                                 lastOnline.textContent = "";
