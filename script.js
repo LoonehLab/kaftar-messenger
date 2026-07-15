@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeChat = {type: null, targetId: null};
     
     let updateIntervalId = null;
+    let lastMessageId = 0;
 
     // =============( Switch Mode Button )=============
     if (window.themeToggleBtn || document.getElementById('themeToggleBtn')) {
@@ -360,6 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
             appContainer.classList.add('chat-open');
             activeChat.type = type;
             activeChat.targetId = id;
+            lastMessageId = 0;
             loadMessages();
 
             if (activeChat.type === "group") {
@@ -419,8 +421,18 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(url);
             if (!response.ok) return;
+
             const messages = await response.json();
-            messagesContainer.innerHTML = '';
+
+            if (messages.length === 0) return;
+
+            const newestMessageId = messages[messages.length - 1].id;
+
+            if (newestMessageId <= lastMessageId) {
+                return;
+            }
+
+            lastMessageId = newestMessageId;
             if (messages.length === 0) {
                 messagesContainer.innerHTML = `
                     <div class="chat-empty-state">
@@ -549,6 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sidebarSearch.value = '';
             activeChat.type = 'pv';
             activeChat.targetId = id;
+            lastMessageId = 0;
             currentRoomName.textContent = name;
             currentRoomAvatar.innerHTML = getAvatarHTML(name, avatarBase64);
             if (appContainer) appContainer.classList.add('chat-open');
