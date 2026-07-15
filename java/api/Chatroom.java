@@ -37,10 +37,20 @@ public class Chatroom {
                 Core.sendResponse(exchange, 201, "{\"status\":\"success\",\"message\":\"Message sent to PV\"}");
             } 
 
-            else if ("GET".equalsIgnoreCase(method)) { // All Messages
+            else if ("GET".equalsIgnoreCase(method)) { // All Messages & Search
                 String query = exchange.getRequestURI().getQuery();
                 String user1 = query != null && query.contains("user1=") ? query.split("user1=")[1].split("&")[0] : "";
-                String user2 = query != null && query.contains("user2=") ? query.split("user2=")[1] : "";
+                String user2 = query != null && query.contains("user2=") ? query.split("user2=")[1].split("&")[0] : ""; // اصلاح جزیی اسپلیت
+                String searchQuery = "";
+                if (query != null && query.contains("search=")) { // Search
+                    searchQuery = query.split("search=")[1].split("&")[0];
+                    try {
+                        searchQuery = java.net.URLDecoder.decode(searchQuery, "UTF-8");
+                    }
+                    catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
                 User u1 = userRepo.findUserById(user1);
                 User u2 = userRepo.findUserById(user2);
                 if (u1 == null || u2 == null) {
@@ -48,7 +58,15 @@ public class Chatroom {
                     return;
                 }
                 PV targetPv = Core.findOrCreatePV(u1, u2);
-                Core.sendResponse(exchange, 200, Core.convertMessagesToJson(targetPv.messages(),false));
+                List<Message> allMessages = targetPv.messages();
+                if (searchQuery != null && !searchQuery.trim().isEmpty()) {
+                    List<Message> filteredMessages = new ArrayList<>();
+                    for (Message m : allMessages)
+                        if (m.getText() != null && m.getText().toLowerCase().contains(searchQuery.toLowerCase()))
+                            filteredMessages.add(m);
+                    Core.sendResponse(exchange, 200, Core.convertMessagesToJson(filteredMessages, false));
+                }
+                else Core.sendResponse(exchange, 200, Core.convertMessagesToJson(allMessages, false));
             }
 
             else if ("DELETE".equalsIgnoreCase(method)) { // Delete PV
@@ -143,26 +161,41 @@ public class Chatroom {
                 }
             } 
 
-            else if ("GET".equalsIgnoreCase(method)) { // Group Messages
+            else if ("GET".equalsIgnoreCase(method)) { // Group Messages & Search
                 String query = exchange.getRequestURI().getQuery();
-                String groupId = query != null && query.contains("groupId=") ? query.split("groupId=")[1] : "";
+                String groupId = query != null && query.contains("groupId=") ? query.split("groupId=")[1].split("&")[0] : "";
                 Group targetGroup = Core.findGroupById(groupId);
                 if (targetGroup == null) {
                     Core.sendResponse(exchange, 404, "{\"error\":\"Group not found\"}");
                     return;
                 }
-
                 String action = "";
-                if (query != null && query.contains("action=")) {
+                if (query != null && query.contains("action="))
                     action = query.split("action=")[1].split("&")[0];
-                }
-
                 if ("members".equalsIgnoreCase(action)) {
                     int count = targetGroup.getGroupRepository().getMemberCount();
                     Core.sendResponse(exchange, 200, "{\"count\":" + count + "}");
                     return;
                 }
-                Core.sendResponse(exchange, 200, Core.convertMessagesToJson(targetGroup.getMessages(),false));
+                String searchQuery = "";
+                if (query != null && query.contains("search=")) {
+                    searchQuery = query.split("search=")[1].split("&")[0];
+                    try {
+                        searchQuery = java.net.URLDecoder.decode(searchQuery, "UTF-8");
+                    }
+                    catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                List<Message> allMessages = targetGroup.getMessages();
+                if (searchQuery != null && !searchQuery.trim().isEmpty()) {
+                    List<Message> filteredMessages = new ArrayList<>();
+                    for (Message m : allMessages)
+                        if (m.getText() != null && m.getText().toLowerCase().contains(searchQuery.toLowerCase()))
+                            filteredMessages.add(m);
+                    Core.sendResponse(exchange, 200, Core.convertMessagesToJson(filteredMessages, false));
+                }
+                else Core.sendResponse(exchange, 200, Core.convertMessagesToJson(allMessages, false));
             }
 
             else if ("DELETE".equalsIgnoreCase(method)) { // Delete Group

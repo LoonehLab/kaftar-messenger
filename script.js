@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctxDeleteBtn = document.getElementById('ctxDeleteBtn');
     let selectedMessageId = null;
 
+    const headerSearchBox = document.getElementById('headerSearchBox');
+    const headerMsgSearch = document.getElementById('headerMsgSearch');
     const gearIcon = document.querySelector('.gear-icon');
     const headerSettingsMenu = document.getElementById('headerSettingsMenu');
     const headerViewProfileBtn = document.getElementById('headerViewProfileBtn');
@@ -44,6 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let isViewingArchive = false;
     const archivedFolderHeader = document.getElementById('archivedFolderHeader');
     const archiveBackBtn = document.getElementById('archiveBackBtn');
+
+    let messageTimestamps = [];
 
     const API_BASE_URL = 'http://localhost:8081/api';
     
@@ -359,43 +363,39 @@ document.addEventListener('DOMContentLoaded', () => {
             loadMessages();
 
             if (activeChat.type === "group") {
-                    loadGroupMembersCount(activeChat.targetId);
-                } else {
-
-                    const lastOnline = document.querySelector(".last-online");
-
-                    // Saved Messages
-                    if (activeChat.targetId == CURRENT_USER_ID) {
-                        lastOnline.textContent = "";
-                        return;
-                    }
-
-                    fetch(`${API_BASE_URL}/user/info?userId=${activeChat.targetId}`)
-                        .then(res => res.json())
-                        .then(data => {
-
-                            if (data.isOnline === true) {
-                                lastOnline.textContent = "Online";
-                                return;
-                            }
-
-                            if (!data.lastSeen) {
-                                lastOnline.textContent = "";
-                                return;
-                            }
-
-                            const date = new Date(data.lastSeen);
-
-                            const hour = String(date.getHours()).padStart(2, "0");
-                            const minute = String(date.getMinutes()).padStart(2, "0");
-
-                            lastOnline.textContent = `Last seen at ${hour}:${minute}`;
-                        })
-                        .catch(err => {
-                            console.error("Failed to load last seen:", err);
-                            lastOnline.textContent = "";
-                        });
+                loadGroupMembersCount(activeChat.targetId);
+            } else {
+                const lastOnline = document.querySelector(".last-online");
+                if (headerSearchBox) {
+                    headerSearchBox.style.display = 'flex';
+                    headerMsgSearch.value = '';
                 }
+                // Saved Messages
+                if (activeChat.targetId == CURRENT_USER_ID) {
+                    lastOnline.textContent = "";
+                    return;
+                }
+                fetch(`${API_BASE_URL}/user/info?userId=${activeChat.targetId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.isOnline === true) {
+                            lastOnline.textContent = "Online";
+                            return;
+                        }
+                        if (!data.lastSeen) {
+                            lastOnline.textContent = "";
+                            return;
+                        }
+                        const date = new Date(data.lastSeen);
+                        const hour = String(date.getHours()).padStart(2, "0");
+                        const minute = String(date.getMinutes()).padStart(2, "0");
+                        lastOnline.textContent = `Last seen at ${hour}:${minute}`;
+                    })
+                    .catch(err => {
+                        console.error("Failed to load last seen:", err);
+                        lastOnline.textContent = "";
+                    });
+            }
 
             setupAutoUpdate();
         });
@@ -555,10 +555,77 @@ document.addEventListener('DOMContentLoaded', () => {
         chatroomListContainer.appendChild(itemDiv);
     }
 
+    // =============( Live Message Search )=============
+    if (headerMsgSearch) {
+        headerMsgSearch.addEventListener('input', async () => {
+            const query = headerMsgSearch.value.trim();
+            if (query.length <= 3) {
+                setupAutoUpdate();
+                await loadMessages();
+                return;
+            }
+            if (updateIntervalId) clearInterval(updateIntervalId);
+            messagesContainer.innerHTML = `
+                <div class="modal-loading">
+                    <i class="fas fa-spinner fa-spin"></i> Searching messages...
+                </div>
+            `;
+            let searchApiUrl = "";
+            if (activeChat.type === 'pv')
+                searchApiUrl = `${API_BASE_URL}/pv?user1=${CURRENT_USER_ID}&user2=${activeChat.targetId}&search=${encodeURIComponent(query)}`;
+            else if (activeChat.type === 'group')
+                searchApiUrl = `${API_BASE_URL}/group?groupId=${activeChat.targetId}&search=${encodeURIComponent(query)}`;
+            try {
+                const res = await fetch(searchApiUrl);
+                if (!res.ok) {
+                    messagesContainer.innerHTML = '<div class="search-no-results">Error searching messages</div>';
+                    return;
+                }
+                const filteredMessages = await res.json();
+                messagesContainer.innerHTML = '';
+                if (filteredMessages.length === 0) {
+                    messagesContainer.innerHTML = '<div class="search-no-results">No matching messages found</div>';
+                    return;
+                }
+                filteredMessages.forEach(msg => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.setAttribute('data-msg-id', msg.id);
+                    messageDiv.classList.add('message');
+                    if (msg.senderId === CURRENT_USER_ID) {
+                        messageDiv.classList.add('outgoing');
+                        messageDiv.innerHTML = `<div class="message-bubble">${msg.text}</div>`;
+                    }
+                    else {
+                        messageDiv.classList.add('incoming');
+                        messageDiv.innerHTML = `
+                            <div class="message-sender-avatar">
+                                <div class="msg-avatar-fallback">${msg.senderId.charAt(0).toUpperCase()}</div>
+                            </div>
+                            <div class="message-bubble">${msg.text}</div>
+                        `;
+                    }
+                    messagesContainer.appendChild(messageDiv);
+                });
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+            catch (err) {
+                console.error("Error fetching filtered messages:", err);
+                messagesContainer.innerHTML = '<div class="search-no-results">Connection error during search</div>';
+            }
+        });
+    }
+
     // =============( Send Message )=============
     async function sendMessage() {
         const text = messageInput.value.trim();
         if (text === '' || !activeChat.targetId) return;
+        const now = Date.now();
+        messageTimestamps = messageTimestamps.filter(timestamp => now - timestamp < 1000);
+        if (messageTimestamps.length >= 2) {
+            alert("Do NOT Spam!");
+            return;
+        }
+        messageTimestamps.push(now);
         let url = `${API_BASE_URL}/${activeChat.type}`;
         let bodyData = activeChat.type === 'pv' ? {
             senderId: CURRENT_USER_ID,
@@ -1117,6 +1184,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function closeChatAndRefresh() {
         if (headerSettingsMenu) headerSettingsMenu.style.display = 'none';
+        if (headerSearchBox) headerSearchBox.style.display = 'none';
         if (appContainer) appContainer.classList.remove('chat-open');
         messagesContainer.innerHTML = '';
         currentRoomName.textContent = 'No Chats Yet';
