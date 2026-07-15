@@ -306,7 +306,7 @@ public class InformationRepository
                         String[] parts = line.split(":");
                         if(parts[0].equals(targetId))
                         {
-                            return Integer.parseInt((parts[1].split(","))[1])+1;
+                            return Integer.parseInt((parts[1].split(","))[1]);
                         }
                     }
                 }
@@ -329,7 +329,7 @@ public class InformationRepository
                         String[] parts = line.split(":");
                         if(parts[0].equals(targetId))
                         {
-                            return Integer.parseInt((parts[1].split(","))[1])+1;
+                            return Integer.parseInt((parts[1].split(","))[1]);
                         }
                     }
                 }
