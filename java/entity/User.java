@@ -136,6 +136,16 @@ public class User
         messageOfSavedMessage.add(text);
     }
 
+    public void changePassword(String newPassword) {
+        this.password = newPassword;
+        UserRepository.getInstance().changePassword(this.id, newPassword);
+    }
+
+    public void changeFullNameAndSave(String newFullName) {
+        this.fullName = newFullName;
+        UserRepository.getInstance().changeFullName(this.id, newFullName);
+    }
+
     public String getUserName(){ return userName;}
     public String getId(){ return id;}
     public String getFullName() { return fullName; }

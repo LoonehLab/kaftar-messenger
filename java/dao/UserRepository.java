@@ -72,6 +72,23 @@ public class UserRepository
       }
    }
 
+   public void changePassword(String userId, String newPassword) {
+      List<User> users = getAllUsers();
+      try (FileWriter writer = new FileWriter(filePath, false)) {
+         for (User u : users) {
+               if (userId.equals(u.getId())) {
+                  writer.write(u.getId() + " , " + u.getUserName() + " , " + u.getFullName() + " , " + newPassword + "\n");
+               }
+               else {
+                  writer.write(u.getId() + " , " + u.getUserName() + " , " + u.getFullName() + " , " + u.getPassword() + "\n");
+               }
+         }
+      }
+      catch (IOException e) {
+         e.printStackTrace();
+      }
+   }
+
    private List<User> makeArrayOfAllUsers()
    {
       List<User> users = new ArrayList<>();

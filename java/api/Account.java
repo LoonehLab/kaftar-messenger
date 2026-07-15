@@ -96,18 +96,7 @@ public class Account {
                     return;
                 }
                 String hashedPass = PasswordHasher.hashPassword(newPass);
-                List<User> allUsers = userRepo.getAllUsers();
-                try (java.io.FileWriter writer = new java.io.FileWriter(".." + java.io.File.separator + "data" + java.io.File.separator + "users.txt", false)) {
-                    for (User u : allUsers) {
-                        String passwordToSave = u.getUserName().equalsIgnoreCase(username) ? hashedPass : u.getPassword();
-                        writer.write(u.getId() + " , " + u.getUserName() + " , " + u.getFullName() + " , " + passwordToSave + "\n");
-                    }
-                }
-                catch (java.io.IOException e) {
-                    e.printStackTrace();
-                    Core.sendResponse(exchange, 500, "{\"error\":\"Database error\"}");
-                    return;
-                }
+                user.changePassword(hashedPass);
                 loginAttempts.remove(username);
                 lockTimeouts.remove(username);
                 Core.sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Password updated successfully\"}");

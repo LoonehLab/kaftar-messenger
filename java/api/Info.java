@@ -83,7 +83,7 @@ public class Info {
                 }
                 if (!newFullName.isEmpty()) {
                     currentUser.setFullName(newFullName);
-                    // userRepo.edit(currentUser); SOONNNNNNNN
+                    currentUser.changeFullNameAndSave(newFullName);
                 }
                 if (!newBio.isEmpty())currentUser.setBio(newBio);
                 List<User> allUsers = userRepo.getAllUsers();
