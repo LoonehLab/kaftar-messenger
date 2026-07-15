@@ -303,14 +303,16 @@ public class InformationRepository
                     String line;
                     while ((line = reader.readLine()) != null) 
                     {
+                        if (line.trim().isEmpty() || !line.contains(":")) continue;
                         String[] parts = line.split(":");
-                        if(parts[0].equals(targetId))
+                        if(parts[0].equals(targetId) && parts.length > 1)
                         {
-                            return Integer.parseInt((parts[1].split(","))[1]);
+                            String[] subParts = parts[1].split(",");
+                            if (subParts.length > 1) return Integer.parseInt(subParts[1].trim());
                         }
                     }
                 }
-                catch(IOException e) { e.printStackTrace(); }
+                catch(IOException | NumberFormatException e) { e.printStackTrace(); }
             }
         }
 
@@ -326,14 +328,16 @@ public class InformationRepository
                     String line;
                     while ((line = reader.readLine()) != null) 
                     {
+                        if (line.trim().isEmpty() || !line.contains(":")) continue;
                         String[] parts = line.split(":");
-                        if(parts[0].equals(targetId))
+                        if(parts[0].equals(targetId) && parts.length > 1)
                         {
-                            return Integer.parseInt((parts[1].split(","))[1]);
+                            String[] subParts = parts[1].split(",");
+                            if (subParts.length > 1) return Integer.parseInt(subParts[1].trim());
                         }
                     }
                 }
-                catch(IOException e) { e.printStackTrace(); }
+                catch(IOException | NumberFormatException e) { e.printStackTrace(); }
             }
         }
 

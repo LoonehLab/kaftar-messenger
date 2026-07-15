@@ -105,15 +105,8 @@ public class Group extends Chat
 
     public void edit(String newText , Message mes)
     {
-        System.out.println("Before repo = " + mes.getText());
-
         this.groupRepository.editMessage(newText, mes);
-
-        System.out.println("After repo = " + mes.getText());
-
         mes.setText(newText);
-        // this.groupRepository.editMessage(newText, mes);
-        // mes.setText(newText);
         mes.setEdited(true);
     }
 

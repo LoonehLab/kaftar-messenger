@@ -175,47 +175,45 @@ document.addEventListener('DOMContentLoaded', () => {
             if (settingsBio) settingsBio.value = userData.bio || "";
             if (settingsPhone) settingsPhone.value = userData.phone || "";
 
-            const resolvedPvs = await Promise.all(
-                (userData.pvs || []).map(async (pv) => ({
-                    ...pv,
-                    id: pv.targetId,
-                    name: await resolvePvDisplayName(pv.targetId, pv.targetName),
-                    type: 'pv',
-                    profilePicture: pv.profilePicture || null,
-                    isArchived: pv.chatState === 'archived' || pv.state === 'archived', 
-                    isPinned: pv.chatState === 'pinned' || pv.state === 'pinned',
-                    unreadCount: pv.unreadCount || 0
-                }))
-            );
-
-            const groupsList = await Promise.all(
-                (userData.groups || []).map(async (group) => {
-                    let picture = group.groupPicture || group.avatar || null;
-                    if (!picture) {
-                        try {
-                            const avatarRes = await fetch(`${API_BASE_URL}/group/avatar?groupId=${group.groupId}`);
-                            if (avatarRes.ok) {
-                                const avatarData = await avatarRes.json();
-                                picture = avatarData.groupPicture || null;
-                            }
-                        } catch (err) {
-                            console.error("Failed to fetch individual group avatar:", err);
-                        }
+            const allRooms = await Promise.all(
+                (userData.chats || []).map(async (chat) => {
+                    if (chat.type === 'pv') { // PV's
+                        return {
+                            id: chat.targetId,
+                            name: await resolvePvDisplayName(chat.targetId, chat.targetName),
+                            type: 'pv',
+                            profilePicture: chat.profilePicture || null,
+                            isArchived: chat.state === 'archived', 
+                            isPinned: chat.state === 'pinned',
+                            unreadCount: chat.unreadCount || 0
+                        };
                     }
-
-                    return {
-                        id: group.groupId,
-                        name: group.groupName,
-                        type: 'group',
-                        profilePicture: picture,
-                        isArchived: group.chatState === 'archived' || group.state === 'archived',
-                        isPinned: group.chatState === 'pinned' || group.state === 'pinned',
-                        unreadCount: group.unreadCount || 0
-                    };
+                    else { // Groups
+                        let picture = chat.groupPicture || chat.avatar || null;
+                        if (!picture && chat.groupId) {
+                            try {
+                                const avatarRes = await fetch(`${API_BASE_URL}/group/avatar?groupId=${chat.groupId}`);
+                                if (avatarRes.ok) {
+                                    const avatarData = await avatarRes.json();
+                                    picture = avatarData.groupPicture || null;
+                                }
+                            }
+                            catch (err) {
+                                console.error("Failed to fetch individual group avatar:", err);
+                            }
+                        }
+                        return {
+                            id: chat.groupId,
+                            name: chat.groupName,
+                            type: 'group',
+                            profilePicture: picture,
+                            isArchived: chat.state === 'archived',
+                            isPinned: chat.state === 'pinned',
+                            unreadCount: chat.unreadCount || 0
+                        };
+                    }
                 })
             );
-
-            const allRooms = [...resolvedPvs, ...groupsList];
 
             if (!isViewingArchive) { 
                 createArchiveFolderItemHTML();
@@ -230,37 +228,43 @@ document.addEventListener('DOMContentLoaded', () => {
                     type: 'pv',
                     profilePicture: 'saved_messages_icon',
                     isArchived: false,
-                    isPinned: false
+                    isPinned: false,
+                    unreadCount: 0
                 };
             }
 
             const filteredRooms = allRooms.filter(room => { 
                 if (room.id === CURRENT_USER_ID && room.type === 'pv') return false; 
-                if (isViewingArchive) {
-                    return room.isArchived;
-                } else {
-                    return !room.isArchived;
-                }
+                const isArchived = !!room.isArchived;
+                return isViewingArchive ? isArchived : !isArchived;
             });
 
             const pinnedRooms = filteredRooms.filter(room => room.isPinned);
             const unpinnedRooms = filteredRooms.filter(room => !room.isPinned);
 
+            // ۱. رندر چت‌های پین شده
             pinnedRooms.forEach(room => {
                 createChatroomItemHTML(room.id, room.name, room.type, room.profilePicture, room.isPinned, room.unreadCount);
             });
+
+            // ۲. رندر Saved Messages دقیقا وسط یا بالای لیست چت‌های عادی
             if (savedMessagesRoom && !isViewingArchive) {
                 createChatroomItemHTML(
                     savedMessagesRoom.id, 
                     "Saved Messages", 
                     savedMessagesRoom.type, 
                     "saved_messages_icon", 
-                    savedMessagesRoom.isPinned
+                    savedMessagesRoom.isPinned,
+                    savedMessagesRoom.unreadCount
                 );
             }
+
+            // ۳. رندر چت‌های پین نشده (شامل گروه‌ها و بقیه پی‌وی‌ها)
             unpinnedRooms.forEach(room => {
                 createChatroomItemHTML(room.id, room.name, room.type, room.profilePicture, room.isPinned, room.unreadCount);
             });
+
+            // مدیریت فعال‌سازی چت انتخاب شده
             let itemToActivate = null;
             if (options.selectTargetId && options.selectType) {
                 itemToActivate = chatroomListContainer.querySelector(

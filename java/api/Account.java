@@ -130,52 +130,68 @@ public class Account {
                 json.append(String.format("\"id\":\"%s\",\"userName\":\"%s\",\"fullName\":\"%s\",\"profilePicture\":\"%s\",", 
                     currentUser.getId(), currentUser.getUserName(), currentUser.getFullName(), userAvatar));
 
-                // Private Chats
-                json.append("\"pvs\":[");
+                List <Chat> allChats = new java.util.ArrayList<>();
+                Map <Chat, Long> lastTimes = new java.util.HashMap<>();
+
+                // PV's
                 List<String> pvIds = currentUser.getInformationRepository().getPvIds();
-                boolean firstPv = true;
-                for(int i=0 ; i<pvIds.size() ; i++) {
-                    String targetId = pvIds.get(i);
+                for (String targetId : pvIds) {
                     User target = userRepo.findUserById(targetId);
-                    if(target == null) continue;
-                    if(!firstPv) json.append(",");
-                    firstPv = false;
-                    String targetAvatar = target.getInformationRepository().getAvatar();
-                    if(targetAvatar == null) targetAvatar = "";
-                    String pvState = currentUser.getInformationRepository().getChatState(target.getId(), "pv");
-                    PV tempPv = new PV(currentUser, target); 
-                    int unreadCount = 0;
-                    try {
-                        unreadCount = currentUser.getInformationRepository().getUreadMessagesCount(tempPv);
-                    }
-                    catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                    json.append(String.format("{\"targetId\":\"%s\",\"targetName\":\"%s\",\"profilePicture\":\"%s\",\"state\":\"%s\",\"unreadCount\":%d}", 
-                        target.getId(), target.getUserName(), targetAvatar, pvState, unreadCount));
+                    if (target == null) continue;
+                    PV tempPv = new PV(currentUser, target);
+                    long last = 0;
+                    List<Message> messages = tempPv.messages();
+                    if (messages != null && !messages.isEmpty())
+                        last = messages.get(messages.size()-1).getTime();
+                    allChats.add(tempPv);
+                    lastTimes.put(tempPv, last);
                 }
-                json.append("],");
 
-                // Group Chats
-                json.append("\"groups\":[");
+                // Group's
                 List<String> groupIds = currentUser.getInformationRepository().getGroupIds();
-                boolean firstGroup = true;
-                for(String groupId : groupIds) {
+                for (String groupId : groupIds) {
                     Group g = groupRepo.findById(groupId);
-                    if(g == null) continue;
-                    if(!firstGroup) json.append(",");
-                    firstGroup = false;
-                    String groupState = currentUser.getInformationRepository().getChatState(g.getId(), "group");
-                    int unreadCount = 0;
-                    try {
-                        unreadCount = currentUser.getInformationRepository().getUreadMessagesCount(g);
+                    if (g == null) continue;
+                    long last = 0;
+                    List<Message> msgs = g.getMessages();
+                    if (msgs != null && !msgs.isEmpty())
+                        last = msgs.get(msgs.size()-1).getTime();
+                    else {
+                        try {
+                            last = Long.parseLong(g.getId()); 
+                        } 
+                        catch (Exception e) {}
                     }
-                    catch (Exception e) {
-                        e.printStackTrace();
+                    allChats.add(g);
+                    lastTimes.put(g, last);
+                }
+
+                allChats.sort((c1, c2) -> Long.compare(lastTimes.get(c2), lastTimes.get(c1)));
+                json.append("\"chats\":[");
+                for (int i = 0; i < allChats.size(); i++) {
+                    if (i > 0) json.append(",");
+                    Chat chat = allChats.get(i);
+                    if (chat instanceof PV) {
+                        PV pv = (PV) chat;
+                        User target = pv.getFirstPerson().getId().equals(currentUser.getId()) ? pv.getSecondPerson() : pv.getFirstPerson();
+                        String targetAvatar = target.getInformationRepository().getAvatar();
+                        if (targetAvatar == null) targetAvatar = "";
+                        String pvState = currentUser.getInformationRepository().getChatState(target.getId(), "pv");
+                        int unreadCount = currentUser.getInformationRepository().getUreadMessagesCount(pv);
+                        json.append(String.format(
+                            "{\"type\":\"pv\",\"targetId\":\"%s\",\"targetName\":\"%s\",\"profilePicture\":\"%s\",\"state\":\"%s\",\"unreadCount\":%d,\"lastActiveTime\":%d}", 
+                            target.getId(), target.getUserName(), targetAvatar, pvState, unreadCount, lastTimes.get(chat)
+                        ));
                     }
-                    json.append(String.format("{\"groupId\":\"%s\",\"groupName\":\"%s\",\"state\":\"%s\",\"unreadCount\":%d}", 
-                        g.getId(), g.getName(), groupState, unreadCount));
+                    else if (chat instanceof Group) {
+                        Group g = (Group) chat;
+                        String groupState = currentUser.getInformationRepository().getChatState(g.getId(), "group");
+                        int unreadCount = currentUser.getInformationRepository().getUreadMessagesCount(g);
+                        json.append(String.format(
+                            "{\"type\":\"group\",\"groupId\":\"%s\",\"groupName\":\"%s\",\"state\":\"%s\",\"unreadCount\":%d,\"lastActiveTime\":%d}", 
+                            g.getId(), g.getName(), groupState, unreadCount, lastTimes.get(chat)
+                        ));
+                    }
                 }
                 json.append("]");
                 json.append("}");
