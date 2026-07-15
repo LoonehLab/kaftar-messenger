@@ -274,46 +274,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentRoomName.textContent = chatName;
                 activeChat.type = itemToActivate.getAttribute('data-type');
                 activeChat.targetId = itemToActivate.getAttribute('data-target-id');
-
-                /*if (activeChat.type === "group") {
-                    loadGroupMembersCount(activeChat.targetId);
-                } else {
-
-                    const lastOnline = document.querySelector(".last-online");
-
-                    // Saved Messages
-                    if (activeChat.targetId == CURRENT_USER_ID) {
-                        lastOnline.textContent = "";
-                        return;
-                    }
-
-                    fetch(`${API_BASE_URL}/user/info?userId=${activeChat.targetId}`)
-                        .then(res => res.json())
-                        .then(data => {
-
-                            if (data.isOnline === true) {
-                                lastOnline.textContent = "Online";
-                                return;
-                            }
-
-                            if (!data.lastSeen) {
-                                lastOnline.textContent = "";
-                                return;
-                            }
-
-                            const date = new Date(data.lastSeen);
-
-                            const hour = String(date.getHours()).padStart(2, "0");
-                            const minute = String(date.getMinutes()).padStart(2, "0");
-
-                            lastOnline.textContent = `Last seen at ${hour}:${minute}`;
-                        })
-                        .catch(err => {
-                            console.error("Failed to load last seen:", err);
-                            lastOnline.textContent = "";
-                        });
-                }*/
-
                 const avatarEl = itemToActivate.querySelector('.room-avatar');
                 currentRoomAvatar.innerHTML = avatarEl.innerHTML;
                 if (appContainer) appContainer.classList.add('chat-open');
@@ -1549,20 +1509,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             logs.forEach(msg => {
-                const date = new Date(msg.timestamp).toLocaleString();
+                const timestampVal = msg.timestamp || msg.time;
+                const date = new Date(timestampVal);
+                let formattedTime = "Invalid Date";
+                if (!isNaN(date.getTime())) {
+                    const hour = String(date.getHours()).padStart(2, "0");
+                    const minute = String(date.getMinutes()).padStart(2, "0");
+                    formattedTime = `${hour}:${minute}`;
+                }
                 const logRow = document.createElement('div');
-                logRow.className = 'group-member-row';
+                logRow.className = 'message incoming';
+                logRow.style.margin = '10px 0';
+                logRow.style.display = 'flex';
                 logRow.style.flexDirection = 'column';
-                logRow.style.alignItems = 'flex-start';
-                logRow.style.gap = '4px';
-                logRow.style.padding = '10px 6px';
+                logRow.style.alignItems = 'flex-end';
                 logRow.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; width: 100%; font-size: 11px; opacity: 0.6;">
-                        <span><i class="fas fa-user"></i> <b>${msg.senderId}</b></span>
-                        <span><i class="far fa-clock"></i> ${date}</span>
+                    <div style="font-size: 11px; opacity: 0.6; margin-bottom: 2px; padding-right: 8px;">
+                        <i class="fas fa-user"></i> <b>${msg.senderId}</b>
                     </div>
-                    <div style="background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 10px; width: 100%; border-left: 3px solid ${currentLogTab === 'edited' ? 'var(--cyan-aqua)' : '#ef4444'}; word-break: break-all;">
+                    <div class="message-bubble" style="max-width: 100%; width: 100%; word-break: break-all;">
                         ${msg.text}
+                        <div style="display: flex; justify-content: flex-end; font-size: 10px; opacity: 0.5; margin-top: 4px;">
+                            <span>${formattedTime}</span>
+                        </div>
                     </div>
                 `;
                 groupLogsList.appendChild(logRow);

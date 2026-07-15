@@ -598,12 +598,12 @@ body {
 
 .log-toggle-container {
     display: flex;
-    background: var(--bg-input);
-    border: 1px solid var(--border-light);
+    background: var(--bg-input, #1e293b);
+    border: 1px solid var(--border-light, rgba(255, 255, 255, 0.1));
     border-radius: 10px;
     padding: 4px;
     gap: 4px;
-    margin-bottom: 10px;
+    margin: 15px 0;
     width: 100%;
 }
 
@@ -611,36 +611,34 @@ body {
     flex: 1;
     padding: 10px;
     border: none;
-    background: none;
-    color: var(--text-main);
+    background: transparent;
+    color: var(--text-main, #94a3b8);
     font-weight: 600;
     font-size: 13px;
     cursor: pointer;
     border-radius: 8px;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 .log-tab-btn:hover {
-    color: var(--text-white);
-    background-color: rgba(255, 255, 255, 0.02);
+    color: var(--text-white, #ffffff);
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
-.log-tab-btn.active {
-    background: var(--dark-blue);
-    color: var(--text-white);
-    box-shadow: 0 0 8px var(--dark-blue);
+.log-tab-btn#logEditedTabBtn.active {
+    background: var(--dark-blue, #0284c7);
+    color: var(--text-white, #ffffff);
+    box-shadow: 0 0 10px rgba(2, 132, 199, 0.4);
 }
 
-#groupLogsList {
-    padding: 4px 8px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-}
-
-#logDeletedTabBtn.active {
-    background: #ef4444;
-    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+.log-tab-btn#logDeletedTabBtn.active {
+    background: #ef4444; 
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
 }
 
 .form-group {
