@@ -61,7 +61,11 @@ public class Chatroom {
                     return;
                 }
                 PV targetPv = Core.findOrCreatePV(user1, user2);
-                targetPv.deletePv("both");
+                targetPv.deletePv("both"); 
+                user1.removePv(targetPv);
+                user2.removePv(targetPv);
+                user1.getInformationRepository().removePv(targetPv);
+                user2.getInformationRepository().removePv(targetPv);
                 Core.sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"PV chat history deleted\"}");
                 return;
             }
@@ -162,9 +166,13 @@ public class Chatroom {
                     targetGroup.deleteChat();
                     List<User> safeMembers = new ArrayList<>(targetGroup.getMembers());
                     for (User u : safeMembers) {
-                        targetGroup.leftOrRemove(u);
+                        u.removeGroup(targetGroup); 
+                        u.getInformationRepository().removeGroup(targetGroup); 
+                        targetGroup.leftOrRemove(u); 
                     }
-                    targetGroup.deleteGroupForAll();
+                    targetGroup.deleteGroupForAll(); 
+                    groupRepo.delete(targetGroup);
+
                     Core.sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Group deleted for all\"}");
                 } 
                 else Core.sendResponse(exchange, 404, "{\"error\":\"Group not found\"}");

@@ -89,15 +89,11 @@ public class PvRepository
 
     public boolean deletePv()
     {
-        if(file.delete())
-        {
-            return true;
-        }
-
-        else
-        {
-            return false;
-        }
+        boolean mainDeleted = false;
+        if (file.exists()) mainDeleted = file.delete();
+        if (deletedMessages.exists()) deletedMessages.delete();
+        if (editedMessages.exists()) editedMessages.delete();
+        return mainDeleted;
     }
 
     public void addMessage(Message message) {

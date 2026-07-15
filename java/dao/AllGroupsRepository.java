@@ -49,6 +49,33 @@ public class AllGroupsRepository
             e.printStackTrace();
         }
     }
+
+    public void delete(Group group) {
+        if (group == null || group.getId() == null) return;
+        File file = new File(filePath);
+        if (!file.exists()) return;
+        List<String> remainingLines = new ArrayList<>();
+        String targetGroupId = group.getId().trim();
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty()) continue;
+                String[] data = line.split(" , ");
+                if (data.length > 0 && !data[0].trim().equals(targetGroupId)) remainingLines.add(line);
+            }
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        try (FileWriter writer = new FileWriter(file, false)) {
+            for (String remainingLine : remainingLines)
+                writer.write(remainingLine + "\n");
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     
     public Group findById(String groupId)
     {

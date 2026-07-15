@@ -139,12 +139,15 @@ public class Group extends Chat
     public void deleteGroupForAll()
     {
         deleteChat();
-
-        for(User u : members)
+        List<User> tempMembers = new ArrayList<>(members);
+        for(User u : tempMembers)
         {
             leftOrRemove(u);
         }
-
+        if (groupRepository != null) {
+            groupRepository.deleteGroup();
+            groupRepository.deleteGroupMessages();
+        }
     }
 
     public void addMember(User user)

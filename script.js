@@ -927,6 +927,79 @@ document.addEventListener('DOMContentLoaded', () => {
             const dynamicActionsContainer = document.getElementById('dynamicHeaderSettingsActions');
             if (dynamicActionsContainer) {
                 dynamicActionsContainer.innerHTML = '';
+                const deleteActionBtn = document.createElement('button');
+                deleteActionBtn.classList.add('delete-item');
+                if (activeChat.type === 'pv') {
+                    deleteActionBtn.innerHTML = `<i class="fas fa-trash-alt"></i> Delete Chat`;
+                    deleteActionBtn.addEventListener('click', async () => {
+                        if (!confirm("Are you sure you want to delete this chat history?")) return;
+                        try {
+                            const response = await fetch(`${API_BASE_URL}/pv`, {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ user1: CURRENT_USER_ID, user2: activeChat.targetId })
+                            });
+                            if (response.ok) closeChatAndRefresh();
+                        }
+                        catch (err) {
+                            console.error("Error deleting PV:", err);
+                        }
+                    });
+                }
+                else if (activeChat.type === 'group') {
+                    let isOwner = false;
+                    try {
+                        const detailRes = await fetch(`${API_BASE_URL}/details?groupId=${activeChat.targetId}`);
+                        if (detailRes.ok) {
+                            const data = await detailRes.json();
+                            isOwner = (data.ownerId === CURRENT_USER_ID);
+                        }
+                    }
+                    catch (err) {
+                        console.error("Error checking group owner:", err);
+                    }
+                    if (isOwner) {
+                        deleteActionBtn.innerHTML = `<i class="fas fa-trash-alt"></i> Delete Group`;
+                        deleteActionBtn.addEventListener('click', async () => {
+                            if (!confirm("Are you sure you want to completely delete this group?")) return;
+                            try {
+                                const response = await fetch(`${API_BASE_URL}/group`, {
+                                    method: 'DELETE',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ groupId: activeChat.targetId })
+                                });
+                                if (response.ok) closeChatAndRefresh();
+                            }
+                            catch (err) {
+                                console.error("Error deleting group:", err);
+                            }
+                        });
+                    }
+                    else {
+                        deleteActionBtn.innerHTML = `<i class="fas fa-sign-out-alt"></i> Leave Group`;
+                        deleteActionBtn.addEventListener('click', async () => {
+                            if (!confirm("Are you sure you want to leave this group?")) return;
+                            try {
+                                const myUsername = settingsUsername ? settingsUsername.value.trim() : CURRENT_USER_ID;
+                                const response = await fetch(`${API_BASE_URL}/group`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        action: "removeMember",
+                                        groupId: activeChat.targetId,
+                                        memberId: myUsername
+                                    })
+                                });
+                                if (response.ok) closeChatAndRefresh();
+                                else alert("Failed to leave group.");
+                            }
+                            catch (err) {
+                                console.error("Error leaving group:", err);
+                            }
+                        });
+                    }
+                }
+                dynamicActionsContainer.appendChild(deleteActionBtn);
                 const pinBtn = document.createElement('button'); // Pin | Archive Buttons
                 pinBtn.innerHTML = isPinned 
                     ? `<i class="fas fa-thumbtack"></i> Unpin Chat` 
@@ -936,6 +1009,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await handleChatStateChange(activeChat.targetId, activeChat.type, action);
                 });
                 dynamicActionsContainer.appendChild(pinBtn);
+                
                 const archiveBtn = document.createElement('button');
                 archiveBtn.innerHTML = isArchived 
                     ? `<i class="fas fa-file-archive"></i> Remove from Archive` 
@@ -966,6 +1040,16 @@ document.addEventListener('DOMContentLoaded', () => {
             headerSettingsMenu.style.left = `${e.pageX - menuWidth}px`;
             headerSettingsMenu.style.top = `${e.pageY + 10}px`;
         });
+    }
+
+    function closeChatAndRefresh() {
+        if (headerSettingsMenu) headerSettingsMenu.style.display = 'none';
+        if (appContainer) appContainer.classList.remove('chat-open');
+        messagesContainer.innerHTML = '';
+        currentRoomName.textContent = 'No Chats Yet';
+        if (currentRoomAvatar) currentRoomAvatar.innerHTML = '⚠';
+        activeChat = {type: null, targetId: null};
+        LoadChatrooms();
     }
 
     async function handleChatStateChange(chatId, type, action) {

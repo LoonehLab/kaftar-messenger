@@ -84,12 +84,9 @@ public class PV extends Chat
 
     public void deleteChat()
     {
-        for(Message m : messages)
-        {
-            deleteMessage(m);
-        }
-
+        messages.clear();
         numOfMessages = 0;
+        if (pvRepository != null) pvRepository.deletPvMessages();
     }
 
     public void deletePv(String forWho)
@@ -101,13 +98,12 @@ public class PV extends Chat
         {
             firstPerson.removePv(this);
             secondPerson.removePv(this);
+            pvRepository.deletePv();
         }
-
         else if(forWho.equals("first"))
         {
             firstPerson.removePv(this);
         }
-
         else if(forWho.equals("second"))
         {
             secondPerson.removePv(this);
