@@ -58,6 +58,24 @@ public class InformationRepository
             {
             lastSeenFile.createNewFile();
             }
+            File blockFile = new File(folder, "block.txt");
+            if(!blockFile.exists())
+            {
+            blockFile.createNewFile();
+            }
+        }
+        catch(IOException e) 
+        {
+        e.printStackTrace();
+        }
+    }
+
+    public void saveBlockedUser(User user)
+    {
+        File file = new File(userDirectory, "block.txt");
+        try(FileWriter writer = new FileWriter(file, true))
+        {
+            writer.write(user.getId()+"\n");
         }
         catch(IOException e) 
         {
@@ -585,6 +603,31 @@ public class InformationRepository
         return ids;
     }
 
+    public List<String> getBlockedUsersId()
+    {
+        List<String> ids = new ArrayList<>();
+        File file = new File(userDirectory, "block.txt");
+        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        {
+            String line;
+
+            while ((line = reader.readLine()) != null) 
+            {
+                if(!line.isEmpty()) 
+                {
+                    ids.add(line.trim());
+                }
+            }
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return ids;
+    }
+
     public void removePv(PV pv)
     {
         String targetId = (pv.getFirstPerson().getId()).equals(user.getId()) ? pv.getSecondPerson().getId() : pv.getFirstPerson().getId();
@@ -684,6 +727,34 @@ public class InformationRepository
         }
 
         File file = new File(userDirectory, "contact.txt");
+        try(FileWriter writer = new FileWriter(file , false))
+        {
+            for(String v : ids)
+            {
+                writer.write(v+"\n");
+            }
+        }
+
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public void removeBlockedUser(User user)
+    {
+        List<String> ids = getBlockedUsersId();
+        
+        for(String c : ids)
+        {
+            if(c.equals(user.getId()))
+            {
+                ids.remove(c);
+                break;
+            }
+        }
+
+        File file = new File(userDirectory, "block.txt");
         try(FileWriter writer = new FileWriter(file , false))
         {
             for(String v : ids)
