@@ -543,23 +543,6 @@ public class InformationRepository
         return sb.toString();
     }
 
-    /*public int getHowManyGroupCreated()
-    {
-        int howManyGroupsCreate = -1;
-        File file = new File(userDirectory, "bio.txt");
-        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
-        {
-            String line = reader.readLine();
-            howManyGroupsCreate = Integer.parseInt(line);
-        }
-        catch(IOException e)
-        {
-            e.printStackTrace();
-        }
-
-        return howManyGroupsCreate;
-    }*/
-
     public String getBio()
     {
         String bio = null;
@@ -770,6 +753,15 @@ public class InformationRepository
         catch(IOException e)
         {
             e.printStackTrace();
+        }
+    }
+
+    public void deleteUserDirectory() {
+        File folder = new File(userDirectory);
+        if (folder.exists() && folder.isDirectory()) {
+            File[] files = folder.listFiles();
+            if (files != null) for (File file : files) file.delete();
+            folder.delete();
         }
     }
 }

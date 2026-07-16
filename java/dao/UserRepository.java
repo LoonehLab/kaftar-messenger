@@ -46,6 +46,19 @@ public class UserRepository
       }
    }
 
+   public void delete(User user) {
+      if (user == null) return;
+      List<User> users = getAllUsers();
+      try (FileWriter writer = new FileWriter(filePath, false)) {
+         for (User u : users)
+            if (!u.getId().equals(user.getId()))
+               writer.write(u.getId() + " , " + u.getUserName() + " , " + u.getFullName() + " , " + u.getPassword() + "\n");
+      }
+      catch (IOException e) {
+         e.printStackTrace();
+      }
+   }
+
    public void changeFullName(String userId ,String newName)
    {
       List<User> users = getAllUsers();

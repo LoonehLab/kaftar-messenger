@@ -106,12 +106,45 @@ public class Admin implements Runnable {
             System.out.println("User not found.");
             return;
         }
-        List<Group> userGroups = new ArrayList<>(user.getGroups());
+
+        List<Group> userGroups = new ArrayList<>(user.getGroups()); // Delete Groups
         for (Group g : userGroups) {
-            g.leftOrRemove(user);
+            if (g.getOwner() != null && g.getOwner().getId().equals(user.getId())) { // Owner
+                g.deleteChat();
+                List<User> safeMembers = new ArrayList<>(g.getMembers());
+                for (User member : safeMembers) {
+                    member.removeGroup(g);
+                    member.getInformationRepository().removeGroup(g);
+                    g.leftOrRemove(member);
+                }
+                g.deleteGroupForAll();
+                groupRepo.delete(g); 
+            }
+            else { // Member
+                g.leftOrRemove(user);
+                user.removeGroup(g);
+                user.getInformationRepository().removeGroup(g);
+            }
         }
-        //Needs deleting
-        System.out.println("User " + user.getUserName() + " has been disconnected from groups and marked for deletion.");
+
+        List<PV> userPvs = new ArrayList<>(user.getPv()); // Delete PV's
+        for (PV pv : userPvs) {
+            pv.deletePv("both");
+            User user1 = pv.getFirstPerson();
+            User user2 = pv.getSecondPerson();
+            if (user1 != null) {
+                user1.removePv(pv);
+                user1.getInformationRepository().removePv(pv);
+            }
+            if (user2 != null) {
+                user2.removePv(pv);
+                user2.getInformationRepository().removePv(pv);
+            }
+        }
+
+        user.getInformationRepository().deleteUserDirectory();
+        userRepo.delete(user);
+        System.out.println("User " + user.getUserName() + " and all related PVs, Groups owned by them, and local files have been completely deleted.");
     }
 
     private void listGroupsAndMembers() {
