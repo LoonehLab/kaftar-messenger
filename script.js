@@ -674,6 +674,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 await loadMessages();
                 await LoadChatrooms({ preserveActive: true });
             }
+            else {
+                if (response.status === 403) {
+                    const errorData = await response.json();
+                    alert(errorData.error || "You are blocked by this user. Cannot send message.");
+                }
+                else {
+                    const errorData = await response.json().catch(() => ({}));
+                    alert(`Error: ${errorData.error || 'Failed to send message.'}`);
+                }
+            }
         } catch (error) {
             console.error('Error sending message:', error);
         }
@@ -1165,7 +1175,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     }
                 }
-                dynamicActionsContainer.appendChild(deleteActionBtn);
                 const pinBtn = document.createElement('button'); // Pin | Archive Buttons
                 pinBtn.innerHTML = isPinned 
                     ? `<i class="fas fa-thumbtack"></i> Unpin Chat` 
@@ -1186,7 +1195,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 dynamicActionsContainer.appendChild(archiveBtn);
 
-                if (activeChat.type === 'pv') { // Contact Buttons
+                if (activeChat.type === 'pv') { // Contact/Block Buttons
                     const contactBtn = document.createElement('button');
                     const isContact = await checkIsContact(activeChat.targetId);
 
@@ -1199,7 +1208,27 @@ document.addEventListener('DOMContentLoaded', () => {
                         await handleContactChange(activeChat.targetId, action);
                     });
                     dynamicActionsContainer.appendChild(contactBtn);
+
+                    if (activeChat.targetId !== CURRENT_USER_ID) {
+                        const blockBtn = document.createElement('button');
+                        const isBlocked = await checkIsBlocked(activeChat.targetId);
+                        if (isBlocked) {
+                            blockBtn.innerHTML = `<i class="fas fa-user-check"></i> Unblock User`;
+                        }
+                        else {
+                            blockBtn.innerHTML = `<i class="fas fa-user-slash" style="color: #ef4444;"></i> Block User`;
+                            blockBtn.style.color = '#ef4444';
+                        }
+                        blockBtn.addEventListener('click', async () => {
+                            const action = isBlocked ? 'unblock' : 'block';
+                            if (confirm(`Are you sure you want to ${action} this user?`)) {
+                                await handleBlockChange(activeChat.targetId, action);
+                            }
+                        });
+                        dynamicActionsContainer.appendChild(blockBtn);
+                    }
                 }
+                dynamicActionsContainer.appendChild(deleteActionBtn);
             }
             headerSettingsMenu.style.display = 'block';
             const menuWidth = headerSettingsMenu.offsetWidth || 160;
@@ -1744,6 +1773,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (err) {
             console.error(err);
+        }
+    }
+
+    // =============( Block Management )=============
+    async function checkIsBlocked(targetUserId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/block?userId=${CURRENT_USER_ID}&targetId=${targetUserId}`);
+            if (response.ok) {
+                const data = await response.json();
+                return data.isBlocked;
+            }
+        }
+        catch (err) {
+            console.error("Error checking block status:", err);
+        }
+        return false;
+    }
+
+    async function handleBlockChange(targetUserId, action) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/block`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: action, // block/unblock
+                    userId: CURRENT_USER_ID,
+                    targetId: targetUserId
+                })
+            });
+            if (response.ok) {
+                alert(`User successfully ${action === 'block' ? 'blocked' : 'unblocked'}!`);
+                if (headerSettingsMenu) headerSettingsMenu.style.display = 'none';
+            }
+            else {
+                const errorData = await response.json();
+                alert(`Error: ${errorData.error || 'Failed to change block status.'}`);
+            }
+        }
+        catch (error) {
+            console.error("Error sending block/unblock request:", error);
         }
     }
 

@@ -31,12 +31,18 @@ public class Chatroom {
                     Core.sendResponse(exchange, 404, "{\"error\":\"Sender or Receiver not found\"}");
                     return;
                 }
+                InformationRepository receiverInfoRepo = receiver.getInformationRepository();
+                List<String> receiverBlockedIds = receiverInfoRepo.getBlockedUsersId();
+                if (receiverBlockedIds != null && receiverBlockedIds.contains(senderId)) {
+                    Core.sendResponse(exchange, 403, "{\"error\":\"You are blocked by this user. Cannot send message.\"}");
+                    return;
+                }
                 PV targetPv = Core.findOrCreatePV(sender, receiver);
                 Message newMessage = new Message(0, senderId, receiverId, text, System.currentTimeMillis(), false, false);
                 targetPv.send(newMessage);
-                receiver.getInformationRepository().unreadMessagesPlusOne(targetPv);
+                receiverInfoRepo.unreadMessagesPlusOne(targetPv);
                 Core.sendResponse(exchange, 201, "{\"status\":\"success\",\"message\":\"Message sent to PV\"}");
-            } 
+            }
 
             else if ("GET".equalsIgnoreCase(method)) { // All Messages & Search
                 String query = exchange.getRequestURI().getQuery();

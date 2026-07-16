@@ -23,6 +23,7 @@ public class Server {
         Chatroom.loadGroup(server);
         Chatroom.loadGroupLogs(server);
         Contacts.Manage(server);
+        Block.Manage(server);
         Messages.Manage(server);
         
         server.setExecutor(null);
