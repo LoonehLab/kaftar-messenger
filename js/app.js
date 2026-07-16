@@ -617,30 +617,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 dynamicActionsContainer.appendChild(archiveBtn);
 
                 if (activeChat.type === 'pv') { // Contact/Block Buttons
-                    const contactBtn = document.createElement('button');
-                    const isContact = await checkIsContact(activeChat.targetId);
-                    contactBtn.innerHTML = isContact 
-                        ? `<i class="fas fa-user-minus"></i> Remove from Contact` 
-                        : `<i class="fas fa-user-plus"></i> Add to Contact`;
-                    contactBtn.addEventListener('click', async () => {
-                        const action = isContact ? 'remove' : 'add';
-                        await handleContactChange(activeChat.targetId, action);
-                    });
-                    dynamicActionsContainer.appendChild(contactBtn);
-                    if (activeChat.targetId !== CURRENT_USER_ID) {
-                        const blockBtn = document.createElement('button');
-                        const isBlocked = await checkIsBlocked(activeChat.targetId);
-                        if (isBlocked)  blockBtn.innerHTML = `<i class="fas fa-user-check"></i> Unblock User`;
-                        else {
-                            blockBtn.innerHTML = `<i class="fas fa-user-slash" style="color: #ef4444;"></i> Block User`;
-                            blockBtn.style.color = '#ef4444';
-                        }
-                        blockBtn.addEventListener('click', async () => {
-                            const action = isBlocked ? 'unblock' : 'block';
-                            if (confirm(`Are you sure you want to ${action} this user?`))
-                                await handleBlockChange(activeChat.targetId, action);
+                    try {
+                        const contactBtn = document.createElement('button');
+                        const isContact = typeof checkIsContact === 'function' ? await checkIsContact(activeChat.targetId) : false;
+                        contactBtn.innerHTML = isContact 
+                            ? `<i class="fas fa-user-minus"></i> Remove from Contact` 
+                            : `<i class="fas fa-user-plus"></i> Add to Contact`;
+                        contactBtn.addEventListener('click', async () => {
+                            const action = isContact ? 'remove' : 'add';
+                            await handleContactChange(activeChat.targetId, action);
                         });
-                        dynamicActionsContainer.appendChild(blockBtn);
+                        dynamicActionsContainer.appendChild(contactBtn);
+                        if (activeChat.targetId !== CURRENT_USER_ID) {
+                            const blockBtn = document.createElement('button');
+                            const isBlocked = typeof checkIsBlocked === 'function' ? await checkIsBlocked(activeChat.targetId) : false;
+                            if (isBlocked)  blockBtn.innerHTML = `<i class="fas fa-user-check"></i> Unblock User`;
+                            else {
+                                blockBtn.innerHTML = `<i class="fas fa-user-slash" style="color: #ef4444;"></i> Block User`;
+                                blockBtn.style.color = '#ef4444';
+                            }
+                            blockBtn.addEventListener('click', async () => {
+                                const action = isBlocked ? 'unblock' : 'block';
+                                if (confirm(`Are you sure you want to ${action} this user?`))
+                                    await handleBlockChange(activeChat.targetId, action);
+                            });
+                            dynamicActionsContainer.appendChild(blockBtn);
+                        }
+                    }
+                    catch (pvErr) {
+                        console.error("Error loading PV specific menu actions:", pvErr);
                     }
                 }
                 dynamicActionsContainer.appendChild(deleteActionBtn);
