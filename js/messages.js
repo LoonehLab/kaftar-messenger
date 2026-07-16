@@ -47,7 +47,7 @@ async function loadMessages() {
             messageDiv.classList.add('message');
             if (msg.senderId === CURRENT_USER_ID) {
                 messageDiv.classList.add('outgoing');
-                messageDiv.innerHTML = `<div class="message-bubble">${msg.text}</div>`;
+                messageDiv.innerHTML = getMessageBubbleHTML(msg.text);
             }
             else {
                 messageDiv.classList.add('incoming');
@@ -57,7 +57,7 @@ async function loadMessages() {
                         <div class="message-sender-avatar" id="${avatarContainerId}">
                             <div class="msg-avatar-fallback">?</div>
                         </div>
-                        <div class="message-bubble">${msg.text}</div>
+                        ${getMessageBubbleHTML(msg.text)}
                     `;
                     (async () => {
                         let avatarBase64 = "";
@@ -84,7 +84,7 @@ async function loadMessages() {
                         }
                     })();
                 }
-                else messageDiv.innerHTML = `<div class="message-bubble">${msg.text}</div>`;
+                else messageDiv.innerHTML = getMessageBubbleHTML(msg.text);
             }
             messagesContainer.appendChild(messageDiv);
         }
@@ -141,6 +141,66 @@ async function sendMessage() {
     } catch (error) {
         console.error('Error sending message:', error);
     }
+}
+
+if (attachBtn && imageFileInput) {
+    attachBtn.addEventListener('click', () => {imageFileInput.click();});
+    imageFileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+        if (file.size > 1024*1024) {
+            alert("Please select a smaller image.");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const base64String = e.target.result;
+            await sendImageMessage(base64String);
+        };
+        reader.readAsDataURL(file);
+        this.value = '';
+    });
+}
+
+async function sendImageMessage(base64Data) {
+    if (!activeChat.targetId) return;
+    const textWithPrefix = `[IMAGE]${base64Data}`;
+    let url = `${API_BASE_URL}/${activeChat.type}`;
+    let bodyData = activeChat.type === 'pv' ? {
+        senderId: CURRENT_USER_ID,
+        receiverId: activeChat.targetId,
+        text: textWithPrefix
+    } : {
+        action: "send",
+        groupId: activeChat.targetId,
+        senderId: CURRENT_USER_ID,
+        text: textWithPrefix
+    };
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bodyData)
+        });
+        if (response.ok) {
+            await loadMessages();
+            await LoadChatrooms({ preserveActive: true });
+        }
+        else alert('Error in sending image.');
+    }
+    catch (error) {
+        console.error('Error sending image message:', error);
+    }
+}
+
+function getMessageBubbleHTML(text) {
+    if (text && text.startsWith('[IMAGE]')) {
+        const base64Image = text.replace('[IMAGE]', '');
+        return `<div class="message-bubble message-image-bubble">
+                    <img src="${base64Image}" style="max-width: 250px; border-radius: 8px; cursor: pointer;" onclick="window.open('${base64Image}')">
+                </div>`;
+    }
+    return `<div class="message-bubble">${text}</div>`;
 }
 
 async function updateLastOnlineStatus() {

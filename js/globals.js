@@ -39,7 +39,9 @@ const logEditedTabBtn = document.getElementById('logEditedTabBtn');
 const logDeletedTabBtn = document.getElementById('logDeletedTabBtn');
 let currentLogTab = 'edited'; // edited | deleted
 
-const messageInput = document.querySelector('.input-container input');
+const messageInput = document.getElementById('messageTextInput');
+const attachBtn = document.getElementById('attachBtn');
+const imageFileInput = document.getElementById('imageFileInput');
 const messagesContainer = document.querySelector('.messages-container');
 const appContainer = document.querySelector('.app-container');
 
