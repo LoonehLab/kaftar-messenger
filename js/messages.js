@@ -1,6 +1,14 @@
 // =============( Load Messages )=============
 async function loadMessages() {
     if (!activeChat.targetId) return;
+    const container = messagesContainer;
+    if (!container) return;
+    const currentChatId = `${activeChat.type}-${activeChat.targetId}`;
+    const isChatChanged = (lastActiveChatId !== currentChatId);
+    const threshold = 150;
+    const isAtBottom = isChatChanged ? true : (container.scrollHeight - container.scrollTop - container.clientHeight) < threshold;
+    const previousScrollTop = container.scrollTop;
+    if (isChatChanged) lastActiveChatId = currentChatId;
     let url = '';
     if (activeChat.type === 'pv')
         url = `${API_BASE_URL}/pv?user1=${CURRENT_USER_ID}&user2=${activeChat.targetId}`;
@@ -10,9 +18,9 @@ async function loadMessages() {
         const response = await fetch(url);
         if (!response.ok) return;
         const messages = await response.json();
-        messagesContainer.innerHTML = '';
+        container.innerHTML = '';
         if (messages.length === 0) {
-            messagesContainer.innerHTML = `
+            container.innerHTML = `
                 <div class="chat-empty-state">
                     <div class="empty-state-bubble">
                         <i class="fas fa-comments"></i>
@@ -76,19 +84,20 @@ async function loadMessages() {
                                 console.error("Error fetching sender avatar:", err);
                             }
                         }
-                        const container = document.getElementById(avatarContainerId);
-                        if (container) {
+                        const containerElement = document.getElementById(avatarContainerId);
+                        if (containerElement) {
                             if (avatarBase64 && avatarBase64.trim() !== "")
-                                container.innerHTML = `<img src="${avatarBase64}" class="msg-sender-img">`;
-                            else container.innerHTML = `<div class="msg-avatar-fallback">${msg.senderId.charAt(0).toUpperCase()}</div>`;
+                                containerElement.innerHTML = `<img src="${avatarBase64}" class="msg-sender-img">`;
+                            else containerElement.innerHTML = `<div class="msg-avatar-fallback">${msg.senderId.charAt(0).toUpperCase()}</div>`;
                         }
                     })();
                 }
                 else messageDiv.innerHTML = getMessageBubbleHTML(msg.text);
             }
-            messagesContainer.appendChild(messageDiv);
+            container.appendChild(messageDiv);
         }
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        if (isChatChanged || isAtBottom) container.scrollTop = container.scrollHeight;
+        else container.scrollTop = previousScrollTop;
     }
     catch (error) {
         console.error('Error loading messages:', error);

@@ -52,6 +52,7 @@ let isViewingArchive = false;
 const archivedFolderHeader = document.getElementById('archivedFolderHeader');
 const archiveBackBtn = document.getElementById('archiveBackBtn');
 
+let lastActiveChatId = null;
 let messageTimestamps = [];
 
 const API_BASE_URL = 'http://localhost:8081/api';

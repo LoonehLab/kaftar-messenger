@@ -768,8 +768,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 profileModalAvatar.innerHTML = `<img src="${base64Image}">`;
                             }
                             else {
-                                const letter = (data.fullName || data.userName || "?").charAt(0).toUpperCase();
-                                profileModalAvatar.innerHTML = `<div class="modal-contact-avatar">${letter}</div>`;
+                                const letter = (data.fullName || data.userName || "?").trim().charAt(0).toUpperCase();
+                                profileModalAvatar.innerHTML = letter;
                             }
                         }
                     }
@@ -794,8 +794,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 profileModalAvatar.innerHTML = `<img src="${gAvatarData.groupPicture}">`;
                             }
                             else {
-                                const letter = (data.name || "G").charAt(0).toUpperCase();
-                                profileModalAvatar.innerHTML = `<div class="modal-contact-avatar">${letter}</div>`;
+                                const letter = (data.name || "G").trim().charAt(0).toUpperCase();
+                                profileModalAvatar.innerHTML = letter;
                             }
                         }
                     }
