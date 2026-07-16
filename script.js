@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeChat = {type: null, targetId: null};
     
     let updateIntervalId = null;
+    let lastMessageId = 0;
 
     // =============( Switch Mode Button )=============
     if (window.themeToggleBtn || document.getElementById('themeToggleBtn')) {
@@ -370,6 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
             appContainer.classList.add('chat-open');
             activeChat.type = type;
             activeChat.targetId = id;
+            lastMessageId = 0;
             loadMessages();
             LoadChatrooms({ preserveActive: true }); 
 
@@ -387,25 +389,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 fetch(`${API_BASE_URL}/user/info?userId=${activeChat.targetId}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.isOnline === true) {
-                            lastOnline.textContent = "Online";
-                            return;
-                        }
-                        if (!data.lastSeen) {
-                            lastOnline.textContent = "";
-                            return;
-                        }
-                        const date = new Date(data.lastSeen);
-                        const hour = String(date.getHours()).padStart(2, "0");
-                        const minute = String(date.getMinutes()).padStart(2, "0");
-                        lastOnline.textContent = `Last seen at ${hour}:${minute}`;
-                    })
-                    .catch(err => {
-                        console.error("Failed to load last seen:", err);
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.lastSeen) {
                         lastOnline.textContent = "";
-                    });
+                        return;
+                    }
+
+                    const lastSeenDate = new Date(data.lastSeen);
+                    const diffSeconds = Math.abs(Date.now() - lastSeenDate.getTime()) / 1000;
+
+                    if (data.isOnline === true || diffSeconds <= 10) {
+                        lastOnline.textContent = "Online";
+                        return;
+                    }
+
+                    const hour = String(lastSeenDate.getHours()).padStart(2, "0");
+                    const minute = String(lastSeenDate.getMinutes()).padStart(2, "0");
+
+                    lastOnline.textContent = `Last seen at ${hour}:${minute}`;
+                })
+                .catch(err => {
+                    console.error("Failed to load last seen:", err);
+                    lastOnline.textContent = "";
+                });
             }
 
             setupAutoUpdate();
@@ -425,8 +432,18 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(url);
             if (!response.ok) return;
+
             const messages = await response.json();
-            messagesContainer.innerHTML = '';
+
+            if (messages.length === 0) return;
+
+            const newestMessageId = messages[messages.length - 1].id;
+
+            if (newestMessageId <= lastMessageId) {
+                return;
+            }
+
+            lastMessageId = newestMessageId;
             if (messages.length === 0) {
                 messagesContainer.innerHTML = `
                     <div class="chat-empty-state">
@@ -552,6 +569,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sidebarSearch.value = '';
             activeChat.type = 'pv';
             activeChat.targetId = id;
+            lastMessageId = 0;
             currentRoomName.textContent = name;
             currentRoomAvatar.innerHTML = getAvatarHTML(name, avatarBase64);
             if (appContainer) appContainer.classList.add('chat-open');
@@ -1692,10 +1710,54 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function updateLastOnlineStatus() {
+        if (activeChat.type !== "pv" || !activeChat.targetId) return;
+
+        const lastOnline = document.querySelector(".last-online");
+        if (!lastOnline) return;
+
+        if (activeChat.targetId == CURRENT_USER_ID) {
+            lastOnline.textContent = "";
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/user/info?userId=${activeChat.targetId}`);
+            const data = await res.json();
+
+            if (!data.lastSeen) {
+                lastOnline.textContent = "";
+                return;
+            }
+
+            const lastSeenDate = new Date(data.lastSeen);
+            const diffSeconds = Math.abs(Date.now() - lastSeenDate.getTime()) / 1000;
+
+            if (data.isOnline === true || diffSeconds <= 10) {
+                lastOnline.textContent = "Online";
+            } else {
+                const hour = String(lastSeenDate.getHours()).padStart(2, "0");
+                const minute = String(lastSeenDate.getMinutes()).padStart(2, "0");
+
+                lastOnline.textContent = `Last seen at ${hour}:${minute}`;
+            }
+
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
     // =============( Update Messages )=============
     function setupAutoUpdate() {
         if (updateIntervalId) clearInterval(updateIntervalId);
-        updateIntervalId = setInterval(loadMessages, 2000);
+
+        updateIntervalId = setInterval(() => {
+            loadMessages();
+
+            if (activeChat.type === "pv") {
+                updateLastOnlineStatus();
+            }
+        }, 2000);
     }
 
     // =============( Member Count )=============
