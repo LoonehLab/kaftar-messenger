@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const contextMenu = document.getElementById('messageContextMenu');
     const ctxEditBtn = document.getElementById('ctxEditBtn');
     const ctxDeleteBtn = document.getElementById('ctxDeleteBtn');
+    const ctxReportBtn = document.getElementById('ctxReportBtn');
     let selectedMessageId = null;
 
     const headerSearchBox = document.getElementById('headerSearchBox');
@@ -448,11 +449,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const messageDiv = document.createElement('div');
                 messageDiv.setAttribute('data-msg-id', msg.id);
                 messageDiv.addEventListener('contextmenu', (e) => {
-                    if (messageDiv.classList.contains('incoming')) return;
                     e.preventDefault();
                     selectedMessageId = msg.id;
+                    if (messageDiv.classList.contains('incoming')) {
+                        if (document.getElementById('ctxEditBtn')) document.getElementById('ctxEditBtn').style.display = 'none';
+                        if (document.getElementById('ctxDeleteBtn')) document.getElementById('ctxDeleteBtn').style.display = 'none';
+                        if (document.getElementById('ctxReportBtn')) document.getElementById('ctxReportBtn').style.display = 'flex';
+                    }
+                    else {
+                        if (document.getElementById('ctxEditBtn')) document.getElementById('ctxEditBtn').style.display = 'flex';
+                        if (document.getElementById('ctxDeleteBtn')) document.getElementById('ctxDeleteBtn').style.display = 'flex';
+                        if (document.getElementById('ctxReportBtn')) document.getElementById('ctxReportBtn').style.display = 'none';
+                    }
                     contextMenu.style.display = 'block'; 
-                    const menuWidth = contextMenu.offsetWidth || 120;
+                    const menuWidth = contextMenu.offsetWidth || 140;
                     contextMenu.style.left = `${e.pageX - menuWidth}px`;
                     contextMenu.style.top = `${e.pageY}px`;
                 });
@@ -1073,6 +1083,38 @@ document.addEventListener('DOMContentLoaded', () => {
             catch (error) {
                 console.error('Error editing message:', error);
             }
+        });
+    }
+
+    if (ctxReportBtn) {
+        ctxReportBtn.addEventListener('click', async () => {
+            if (!selectedMessageId) return;
+            if (!confirm("Are you sure you want to report this message?")) return;
+            const bodyData = {
+                action: "report",
+                chatType: activeChat.type,
+                messageId: selectedMessageId.toString(),
+                user1: CURRENT_USER_ID,
+                user2: activeChat.targetId,
+                groupId: activeChat.targetId
+            };
+            try {
+                const response = await fetch(`${API_BASE_URL}/message`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyData)
+                });
+                if (response.ok) alert("Message reported successfully.");
+                else {
+                    const errorData = await response.json().catch(() => ({}));
+                    alert(`Failed to report: ${errorData.error || 'Unknown error'}`);
+                }
+            }
+            catch (error) {
+                console.error('Error reporting message:', error);
+                alert("Network error. Could not report the message.");
+            }
+            contextMenu.style.display = 'none';
         });
     }
 

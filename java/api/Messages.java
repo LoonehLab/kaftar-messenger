@@ -8,6 +8,7 @@ import com.sun.net.httpserver.HttpServer;
 public class Messages {
     
     private static final UserRepository userRepo = UserRepository.getInstance();
+    private static final ReportRepository reportRepo = ReportRepository.getInstance();
 
     public static void Manage (HttpServer server){
         server.createContext("/api/message", exchange -> {
@@ -51,20 +52,26 @@ public class Messages {
                 return;
             }
 
-            if ("PUT".equalsIgnoreCase(exchange.getRequestMethod())) {
+            if ("PUT".equalsIgnoreCase(exchange.getRequestMethod())) { // Edit Message
                 String newText = Core.extractJsonValue(body, "newText");
                 targetChat.edit(newText, targetMsg);
                 Core.sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Message edited successfully\"}");
             }
 
-            else if ("DELETE".equalsIgnoreCase(exchange.getRequestMethod())) {
+            else if ("DELETE".equalsIgnoreCase(exchange.getRequestMethod())) { // Delete Message
                 targetChat.deleteMessage(targetMsg);
                 Core.sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Message deleted successfully\"}");
             }
 
-            else {
-                Core.sendResponse(exchange, 405, "Method Not Allowed");
+            else if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) { // Commit Report
+                String action = Core.extractJsonValue(body, "action");
+                if ("report".equalsIgnoreCase(action)) {
+                    reportRepo.saveReport(targetMsg);
+                    Core.sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Message reported successfully\"}");
+                }
+                else Core.sendResponse(exchange, 400, "{\"error\":\"Invalid action. Expected action=report\"}");
             }
+            else Core.sendResponse(exchange, 405, "Method Not Allowed");
         });
     }
 }

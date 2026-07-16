@@ -6,6 +6,7 @@ import security.PasswordHasher;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class Admin implements Runnable {
@@ -189,5 +190,56 @@ public class Admin implements Runnable {
 
     private void viewReportedMessages() {
         System.out.println("\n--- Reported Messages ---");
+        ReportRepository reportRepo = ReportRepository.getInstance();
+        Map <Integer, String[]> reports = reportRepo.getReports();
+        if (reports == null || reports.isEmpty()) {
+            System.out.println("No reported messages found.");
+            return;
+        }
+        for (Map.Entry<Integer, String[]> entry : reports.entrySet()) {
+            Integer msgId = entry.getKey();
+            String[] reportData = entry.getValue();
+            System.out.printf("Message ID: %d\n", msgId);
+            if (reportData != null && reportData.length > 0) {
+                String sender = reportData.length > 0 ? reportData[0] : "Unknown";
+                String content = reportData.length > 1 ? reportData[1] : "No Content";
+                System.out.printf("  -> Sender ID: %s", sender);
+                System.out.printf(" , Content: \"%s\"\n", content);
+            }
+            else {
+                System.out.println("  -> No details available.");
+            }
+            System.out.println("----------------------");
+        }
+        
+        System.out.println("Admin Actions:");
+        System.out.println("1. Dismiss / Delete a Report");
+        System.out.println("0. Back to Main Menu");
+        System.out.print("Select action: ");
+        String action = scanner.nextLine().trim();
+        
+        if ("1".equals(action)) {
+            System.out.print("Enter the Message ID to dismiss/delete: ");
+            String idInput = scanner.nextLine().trim();
+            try {
+                int targetMsgId = Integer.parseInt(idInput);
+                
+                if (reports.containsKey(targetMsgId)) {
+                    String[] reportData = reports.get(targetMsgId);
+                    String actualSender = (reportData != null && reportData.length > 0) ? reportData[0] : "Unknown";
+                    System.out.print("Enter the Sender ID to confirm: ");
+                    String senderInput = scanner.nextLine().trim();
+                    if (actualSender.equals(senderInput)) {
+                        reportRepo.delete(targetMsgId);
+                        System.out.println("Report for message ID " + targetMsgId + " from sender " + senderInput + " has been successfully cleared.");
+                    }
+                    else System.out.println("Error: Sender ID does not match the report record. Action aborted.");
+                }
+                else System.out.println("Error: Message ID not found in current reports.");
+            }
+            catch (NumberFormatException e) {
+                System.out.println("Invalid ID format. Please enter a number.");
+            }
+        }
     }
 }
