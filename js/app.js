@@ -260,11 +260,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (profileModalAvatar) {
                             profileModalAvatar.innerHTML = `<img src="${data.profilePicture}" class="user-main-img">`;
                         }
-                    } else {
-                        if (profileModalAvatar) profileModalAvatar.innerHTML = getAvatarHTML(currentName, "");
                     }
+                    else if (profileModalAvatar) profileModalAvatar.innerHTML = getAvatarHTML(currentName, "");
                 }
-            } catch (err) {
+                if (selfDangerZone) selfDangerZone.style.display = 'flex';
+            }
+            catch (err) {
                 console.error("Error loading profile details into modal:", err);
             }
         });
@@ -856,6 +857,7 @@ document.addEventListener('DOMContentLoaded', () => {
             settingsFullName.parentNode.querySelector('label').textContent = "Full Name";
             settingsBio.parentNode.style.display = 'flex';
             if (settingsPhone) settingsPhone.parentNode.style.display = 'block';
+            if (selfDangerZone) selfDangerZone.style.display = 'none';
             
             settingsFullName.readOnly = false;
             settingsBio.readOnly = false;

@@ -14,6 +14,9 @@ const settingsUsername = document.getElementById('settingsUsername');
 const settingsFullName = document.getElementById('settingsFullName');
 const settingsBio = document.getElementById('settingsBio');
 const settingsPhone = document.getElementById('settingsPhone');
+const selfDangerZone = document.getElementById('selfDangerZone');
+const logoutBtn = document.getElementById('logoutBtn');
+const deleteAccountBtn = document.getElementById('deleteAccountBtn');
 const saveProfileBtn = document.getElementById('saveProfileBtn');
 
 const contextMenu = document.getElementById('messageContextMenu');

@@ -18,6 +18,47 @@ async function updateGroupMetadata(groupId, targetName) {
     }
 }
 
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+        if (confirm("Are you sure you want to log out?")) {
+            localStorage.removeItem("CURRENT_USER_ID");
+            window.location.href = "index.html";
+        }
+    });
+}
+
+if (deleteAccountBtn) {
+    deleteAccountBtn.addEventListener('click', async () => {
+        const warningMessage = "WARNING: Deleting your account is permanent!\nThis will delete your profile, all your single chats, and any groups you own.\n\nType 'DELETE' to confirm:";
+        const confirmation = prompt(warningMessage);
+        if (confirmation !== "DELETE") {
+            alert("Account deletion canceled (confirmation word did not match).");
+            return;
+        }
+        try {
+            const response = await fetch(`${API_BASE_URL}/user/delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: CURRENT_USER_ID })
+            });
+            if (response.ok) {
+                const result = await response.json();
+                alert(result.message || "Account successfully deleted.");
+                localStorage.removeItem("CURRENT_USER_ID");
+                window.location.href = "index.html";
+            }
+            else {
+                const errorData = await response.json().catch(() => ({}));
+                alert(`Failed to delete account: ${errorData.error || 'Unknown error'}`);
+            }
+        }
+        catch (error) {
+            console.error("Error during account deletion fetch request:", error);
+            alert("A network error occurred while trying to delete your account.");
+        }
+    });
+    }
+
 function setupGroupAvatarUpload(groupId) {
     if (!avatarFileInput) return;
     const baseNewInput = avatarFileInput.cloneNode(true);
