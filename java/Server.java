@@ -11,6 +11,7 @@ public class Server {
 
         Account.login(server);
         Account.recoverPassword(server);
+        Account.deleteAccount(server);
         Account.load(server);
         Account.search(server);
         Info.load(server);

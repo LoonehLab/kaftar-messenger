@@ -108,6 +108,73 @@ public class Account {
         });
     }
 
+    public static void deleteAccount(HttpServer server) {
+        server.createContext("/api/user/delete", exchange -> {
+            Core.handleCORS(exchange);
+            if (exchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) return;
+            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String body = Core.getRequestBody(exchange);
+                String userId = Core.extractJsonValue(body, "userId");
+                if (userId.isEmpty()) {
+                    Core.sendResponse(exchange, 400, "{\"error\":\"Missing userId\"}");
+                    return;
+                }
+                User user = userRepo.findUserById(userId);
+                if (user == null) {
+                    Core.sendResponse(exchange, 404, "{\"error\":\"User not found\"}");
+                    return;
+                }
+                try {
+                    // Delete Groups
+                    List<Group> userGroups = new java.util.ArrayList<>(user.getGroups());
+                    for (Group g : userGroups) {
+                        if (g.getOwner() != null && g.getOwner().getId().equals(user.getId())) {
+                            g.deleteChat();
+                            List<User> safeMembers = new java.util.ArrayList<>(g.getMembers());
+                            for (User member : safeMembers) {
+                                member.removeGroup(g);
+                                member.getInformationRepository().removeGroup(g);
+                                g.leftOrRemove(member);
+                            }
+                            g.deleteGroupForAll();
+                            groupRepo.delete(g);
+                        }
+                        else {
+                            g.leftOrRemove(user);
+                            user.removeGroup(g);
+                            user.getInformationRepository().removeGroup(g);
+                        }
+                    }
+                    // Delete PV's
+                    List<PV> userPvs = new java.util.ArrayList<>(user.getPv());
+                    for (PV pv : userPvs) {
+                        pv.deletePv("both");
+                        User user1 = pv.getFirstPerson();
+                        User user2 = pv.getSecondPerson();
+                        if (user1 != null) {
+                            user1.removePv(pv);
+                            user1.getInformationRepository().removePv(pv);
+                        }
+                        if (user2 != null) {
+                            user2.removePv(pv);
+                            user2.getInformationRepository().removePv(pv);
+                        }
+                    }
+                    user.getInformationRepository().deleteUserDirectory();
+                    userRepo.delete(user);
+                    loginAttempts.remove(user.getUserName());
+                    lockTimeouts.remove(user.getUserName());
+                    Core.sendResponse(exchange, 200, "{\"status\":\"success\",\"message\":\"Account and all related data deleted successfully\"}");
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                    Core.sendResponse(exchange, 500, "{\"error\":\"An error occurred while deleting the account\"}");
+                }
+            }
+            else Core.sendResponse(exchange, 405, "Method Not Allowed");
+        });
+    }
+
     public static void load(HttpServer server) {
         server.createContext("/api/user/init", exchange -> {
             Core.handleCORS(exchange);
