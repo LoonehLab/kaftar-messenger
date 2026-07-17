@@ -255,6 +255,44 @@ async function openGroupAddMemberModal(groupId) {
         groupAddMemberContactsList.innerHTML = '<div class="modal-loading" style="color:#ef4444;">Error loading contacts.</div>';
     }
 }
+// =============( Stickers Modal Workflow )=============
+if (stickerBtn) {
+    stickerBtn.addEventListener('click', () => {
+        if (!activeChat.targetId) {
+            alert("Please select a chat first!");
+            return;
+        }
+        stickersModal.classList.add('active');
+        renderStickers();
+    });
+}
+
+if (closeStickersBtn) {
+    closeStickersBtn.addEventListener('click', () => {
+        stickersModal.classList.remove('active');
+    });
+}
+
+function renderStickers() {
+    if (!stickersGrid) return;
+    stickersGrid.innerHTML = '';
+    if (STICKERS_LIST.length === 0) {
+        stickersGrid.innerHTML = '<div class="modal-loading">No stickers found.</div>';
+        return;
+    }
+    STICKERS_LIST.forEach(stickerName => {
+        const stickerPath = `assets/stickers/${stickerName}`;
+        const itemDiv = document.createElement('div');
+        itemDiv.classList.add('sticker-item');
+        itemDiv.innerHTML = `<img src="${stickerPath}" alt="${stickerName}">`;
+        itemDiv.addEventListener('click', async () => {
+            stickersModal.classList.remove('active');
+            const stickerMessageText = `[STICKER]${stickerName}`;
+            await sendStickerRaw(stickerMessageText);
+        });
+        stickersGrid.appendChild(itemDiv);
+    });
+}
 
 // =============( Group Logs Workflow )=============
 async function openGroupLogsWorkflow(groupId) {

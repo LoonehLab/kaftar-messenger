@@ -202,11 +202,47 @@ async function sendImageMessage(base64Data) {
     }
 }
 
+async function sendStickerRaw(stickerText) {
+    if (!activeChat.targetId) return;
+    let url = `${API_BASE_URL}/${activeChat.type}`;
+    let bodyData = activeChat.type === 'pv' ? {
+        senderId: CURRENT_USER_ID,
+        receiverId: activeChat.targetId,
+        text: stickerText
+    } : {
+        action: "send",
+        groupId: activeChat.targetId,
+        senderId: CURRENT_USER_ID,
+        text: stickerText
+    };
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bodyData)
+        });
+        if (response.ok) {
+            await loadMessages();
+            await LoadChatrooms({ preserveActive: true });
+        }
+        else alert('Failed to send sticker.');
+    }
+    catch (error) {
+        console.error('Error sending sticker:', error);
+    }
+}
+
 function getMessageBubbleHTML(text) {
     if (text && text.startsWith('[IMAGE]')) {
         const base64Image = text.replace('[IMAGE]', '');
         return `<div class="message-bubble message-image-bubble">
                     <img src="${base64Image}" style="max-width: 250px; border-radius: 8px; cursor: pointer;" onclick="window.open('${base64Image}')">
+                </div>`;
+    }
+    if (text && text.startsWith('[STICKER]')) {
+        const stickerName = text.replace('[STICKER]', '');
+        return `<div class="message-bubble message-sticker-bubble">
+                    <img src="assets/stickers/${stickerName}" style="max-width: 120px; display: block;">
                 </div>`;
     }
     return `<div class="message-bubble">${text}</div>`;

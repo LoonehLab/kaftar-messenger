@@ -45,8 +45,23 @@ let currentLogTab = 'edited'; // edited | deleted
 const messageInput = document.getElementById('messageTextInput');
 const attachBtn = document.getElementById('attachBtn');
 const imageFileInput = document.getElementById('imageFileInput');
+const stickersModal = document.getElementById('stickersModal');
+const stickerBtn = document.getElementById('stickerBtn');
+const closeStickersBtn = document.getElementById('closeStickersBtn');
+const stickersGrid = document.getElementById('stickersGrid');
 const messagesContainer = document.querySelector('.messages-container');
 const appContainer = document.querySelector('.app-container');
+
+const STICKERS_LIST = [
+    'sticker1.png',
+    'sticker2.png',
+    'sticker3.png',
+    'sticker4.png',
+    'sticker5.png',
+    'sticker6.png',
+    'sticker7.png',
+    'sticker8.png'
+];
 
 let isViewingArchive = false;
 const archivedFolderHeader = document.getElementById('archivedFolderHeader');

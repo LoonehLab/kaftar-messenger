@@ -65,6 +65,7 @@
             <footer class="chat-footer">
                 <div class="input-container">
                     <button class="action-btn plus-btn" id="attachBtn"><i class="fas fa-plus"></i></button>
+                    <button class="action-btn plus-btn" id="stickerBtn" title="Send Sticker"><i class="far fa-face-smile"></i></button>
                     <input type="file" id="imageFileInput" accept="image/*" style="display: none;">
                     <input type="text" id="messageTextInput" placeholder="Type a message...">
                     <button class="outer-send-btn">
@@ -171,6 +172,20 @@
                         <i class="fas fa-save"></i> Save Changes
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="stickersModal">
+        <div class="modal-box sticker-modal-box">
+            <div class="modal-header">
+                <h3>Select Sticker</h3>
+                <button class="modal-close-btn" id="closeStickersBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-divider"></div>
+            <div class="stickers-grid" id="stickersGrid">
             </div>
         </div>
     </div>

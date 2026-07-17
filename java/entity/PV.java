@@ -71,7 +71,6 @@ public class PV extends Chat
                 return;
             }
         }
-        System.out.println("پیام مورد نظر برای ویرایش یافت نشد!");
     }
 
     public void deleteMessage(Message mes)

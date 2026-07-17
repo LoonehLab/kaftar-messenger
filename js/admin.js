@@ -236,7 +236,6 @@ function renderReports() {
                     <span class="member-badge">Sender ID: ${r.senderId}</span>
                 </div>
                 <div class="report-actions">
-                    <!-- دیگر هیچ پارامتری پاس داده نمی‌شود، چون همه‌چیز یکجا پاک خواهد شد -->
                     <button class="btn-danger-outline" onclick="dismissAllReports()" style="padding: 4px 10px; font-size: 12px; margin: 0;">
                         <i class="fa-solid fa-trash"></i> Clear All Reports
                     </button>
