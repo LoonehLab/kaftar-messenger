@@ -58,7 +58,9 @@ public class ReportRepository
             String line;
             while((line = reader.readLine()) != null)
             {
-                String[] data = line.split(" , ");
+                String lineTrimmed = line.trim();
+                if (lineTrimmed.isEmpty()) continue;
+                String[] data = lineTrimmed.split(" , ");
                 reports.put(counter, data);
                 counter++;
             }
@@ -72,34 +74,15 @@ public class ReportRepository
         return reports;
     }
 
-    public void delete(int messageId) {
-        File file = new File(filePath);
-        if (!file.exists()) return;
-        List<String> lines = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) 
-        {
-            String line;
-            while ((line = reader.readLine()) != null) 
-            {
-                line = line.trim();
-                if (line.isEmpty()) continue;
-                String[] data = line.split(" , ");
-                if (data.length > 0 && !data[2].trim().equals(String.valueOf(messageId)))
-                {
-                    lines.add(line);
-                }
+    public void delete() {
+        File file = new java.io.File(filePath);
+        if (file.exists() && file.delete()) {
+            try {
+                file.createNewFile();
+            }
+            catch (java.io.IOException e) {
+                e.printStackTrace();
             }
         }
-        catch (IOException e) { e.printStackTrace(); }
-
-
-        try (FileWriter writer = new FileWriter(file, false)) {
-            for (String l : lines)
-            {
-                writer.write(l + "\n");
-            }
-                
-        }
-        catch (IOException e) { e.printStackTrace(); }
     }
 }

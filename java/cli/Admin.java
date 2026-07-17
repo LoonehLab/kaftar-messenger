@@ -263,7 +263,7 @@ public class Admin implements Runnable {
                     System.out.print("Enter the Sender ID to confirm: ");
                     String senderInput = scanner.nextLine().trim();
                     if (actualSender.equals(senderInput)) {
-                        reportRepo.delete(targetMsgId);
+                        reportRepo.delete();
                         System.out.println("Report for message ID " + targetMsgId + " from sender " + senderInput + " has been successfully cleared.");
                     }
                     else System.out.println("Error: Sender ID does not match the report record. Action aborted.");

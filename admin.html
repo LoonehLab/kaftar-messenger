@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kaftar Messenger | Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <div class="admin-login-overlay" id="adminLoginOverlay">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="room-avatar">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <h2>Admin Login</h2>
+                <p>Enter your credentials</p>
+            </div>
+            <form id="adminLoginForm">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" required placeholder="Enter username..." id="adminUsername">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" required placeholder="Enter password..." id="adminPassword">
+                </div>
+                <button type="submit" class="login-submit-btn">
+                    <i class="fa-solid fa-right-to-bracket"></i> Login
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="app-container" id="adminMainContainer" style="display: none;">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="room-avatar">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <div class="room-status">
+                    <h3>Kaftar Messenger</h3>
+                    <span class="last-online">Admin Control Panel</span>
+                </div>
+                <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Theme">
+                    <i class="fa-solid fa-moon"></i>
+                </button>
+            </div>
+            
+            <div class="chatroom-list">
+                <div class="chatroom-item active" data-target="usersSection">
+                    <div class="room-info">
+                        <div class="room-avatar"><i class="fa-solid fa-users"></i></div>
+                        <span class="room-name">Manage Users</span>
+                    </div>
+                </div>
+                <div class="chatroom-item" data-target="groupsSection">
+                    <div class="room-info">
+                        <div class="room-avatar"><i class="fa-solid fa-user-group"></i></div>
+                        <span class="room-name">Manage Groups</span>
+                    </div>
+                </div>
+                <div class="chatroom-item" data-target="reportsSection">
+                    <div class="room-info">
+                        <div class="room-avatar">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <div class="unread-badge" id="reportsCount">0</div>
+                        </div>
+                        <span class="room-name">Reported Messages</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-footer" style="padding: 15px; border-top: 1px solid var(--border-light);">
+                <button class="btn-danger-outline" id="adminLogoutBtn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fa-solid fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="current-room-details">
+                    <button class="back-btn"><i class="fa-solid fa-arrow-left"></i></button>
+                    <div class="room-avatar header-avatar" id="headerIcon">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div class="room-status">
+                        <h3 id="headerTitle">Manage Users</h3>
+                        <span class="last-online" id="headerSubtitle">Operations for Users</span>
+                    </div>
+                </div>
+            </div>
+            <div class="messages-container" id="adminContent">
+                <div class="admin-section active-view" id="usersSection">
+                    <div class="action-bar">
+                        <div class="search-box">
+                            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                            <input type="text" id="userSearchInput" placeholder="Search users ...">
+                        </div>
+                        <button class="add-member-trigger-btn" onclick="openModal('addUserModal')" style="max-width: 180px; margin-bottom: 0;">
+                            <i class="fa-solid fa-user-plus"></i> Add New User
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Username</th>
+                                    <th>Full Name</th>
+                                    <th>Phone</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="admin-section" id="groupsSection" style="display: none;">
+                    <div class="action-bar">
+                        <div class="search-box">
+                            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                            <input type="text" id="groupSearchInput" placeholder="Search groups...">
+                        </div>
+                        <button class="add-member-trigger-btn" onclick="openModal('addGroupModal')" style="max-width: 180px; margin-bottom: 0;">
+                            <i class="fa-solid fa-folder-plus"></i> Create Group
+                        </button>
+                    </div>
+                    <div class="groups-grid" id="groupsContainer">
+                    </div>
+                </div>
+                <div class="admin-section" id="reportsSection" style="display: none;">
+                    <div class="reports-container" id="reportsList">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="addUserModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-user-plus"></i> Register New User</h3>
+                <button class="modal-close-btn" onclick="closeModal('addUserModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form class="profile-settings-form" id="addUserForm" onsubmit="handleFormSubmit(event, 'user')">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" required placeholder="Enter username" id="newUsername">
+                </div>
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" required placeholder="Enter full name" id="newFullName">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="text" required placeholder="Enter password" id="newPassword">
+                </div>
+                <button type="submit" class="profile-save-btn">
+                    <i class="fa-solid fa-user-plus"></i> Add User
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ADD GROUP -->
+    <div class="modal-overlay" id="addGroupModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-folder-plus"></i> Create Group</h3>
+                <button class="modal-close-btn" onclick="closeModal('addGroupModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form class="profile-settings-form" id="addGroupForm" onsubmit="handleFormSubmit(event, 'group')">
+                <div class="form-group">
+                    <label>Owner User ID</label>
+                    <input type="text" required placeholder="e.g., USR-101" id="groupOwnerId">
+                </div>
+                <div class="form-group">
+                    <label>Group Name</label>
+                    <input type="text" required placeholder="e.g., Developers" id="groupNameInput">
+                </div>
+                <button type="submit" class="profile-save-btn">
+                    <i class="fa-solid fa-circle-check"></i> Save Group
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: MANAGE USERS IN GROUP -->
+    <div class="modal-overlay" id="manageMembersModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Add Member to Group</h3>
+                <button class="modal-close-btn" onclick="closeModal('manageMembersModal')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form class="profile-settings-form" onsubmit="handleAddMemberSubmit(event)">
+                <div class="form-group">
+                    <label>User ID</label>
+                    <input type="text" required placeholder="Enter User ID (e.g., USR-102)" id="addMemberUserId">
+                </div>
+                <button type="submit" class="profile-save-btn">
+                    <i class="fa-solid fa-plus"></i> Add to Group
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <script src="js/admin.js"></script>
+</body>
+</html>

@@ -1,5 +1,4 @@
 import api.*;
-import cli.Admin;
 
 import com.sun.net.httpserver.HttpServer;
 import java.io.*;
@@ -26,11 +25,13 @@ public class Server {
         Contacts.Manage(server);
         Block.Manage(server);
         Messages.Manage(server);
+
+        Admin.Manage(server);
         
         server.setExecutor(null);
         server.start();
         System.out.println("Kaftar Server is running on port 8081...");
-        Thread adminCliThread = new Thread(new Admin());
-        adminCliThread.start();
+        // Thread adminCliThread = new Thread(new Admin());
+        // adminCliThread.start();
     }
 }
