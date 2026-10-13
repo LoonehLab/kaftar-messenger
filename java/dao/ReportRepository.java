@@ -3,32 +3,15 @@ package dao;
 import entity.*;
 
 import java.util.*;
-import java.io.*;
+import java.sql.*;
 
 public class ReportRepository 
 {
-    private String filePath = ".." + File.separator + "data" + File.separator + "reports.txt";
-
-    private ReportRepository()
-    {
-        try
-        {
-            File file = new File(filePath);
-            File folder = new File(".." + File.separator + "data");
-            if(!folder.exists()) folder.mkdir();
-            if(!file.exists()) file.createNewFile();
-        }
-
-        catch(IOException e)
-        {
-            e.printStackTrace();
-        }
-    }
+    private ReportRepository() {}
 
     private static class ReportRepositoryInner
     {
-        private static final ReportRepository INSTANCE =
-            new ReportRepository();
+        private static final ReportRepository INSTANCE = new ReportRepository();
     }
 
     public static ReportRepository getInstance()
@@ -38,12 +21,16 @@ public class ReportRepository
 
     public void saveReport(Message msg)
     {
-        try(FileWriter writer = new FileWriter(filePath,true))
+        String query = "INSERT INTO reports(sender_id, message_text, message_id) VALUES(?, ?, ?)";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            writer.write(msg.getSenderId()+" , "+msg.getText()+" , "+msg.getId()+"\n");
+            pstmt.setString(1, msg.getSenderId());
+            pstmt.setString(2, msg.getText());
+            pstmt.setInt(3, msg.getId());
+            pstmt.executeUpdate();
         }
-
-        catch(IOException e)
+        catch(SQLException e)
         {
             e.printStackTrace();
         }
@@ -53,36 +40,37 @@ public class ReportRepository
     {
         int counter = 1;
         Map<Integer , String[]> reports = new HashMap<>();
-        try(BufferedReader reader = new BufferedReader(new FileReader(filePath)))
+        String query = "SELECT sender_id, message_text, message_id FROM reports";
+        try (Connection conn = DatabaseManager.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query))
         {
-            String line;
-            while((line = reader.readLine()) != null)
+            while(rs.next())
             {
-                String lineTrimmed = line.trim();
-                if (lineTrimmed.isEmpty()) continue;
-                String[] data = lineTrimmed.split(" , ");
+                String[] data = new String[] {
+                    rs.getString("sender_id"),
+                    rs.getString("message_text"),
+                    String.valueOf(rs.getInt("message_id"))
+                };
                 reports.put(counter, data);
                 counter++;
             }
         }
-
-        catch(IOException e)
+        catch(SQLException e)
         {
             e.printStackTrace();
         }
-
         return reports;
     }
 
     public void delete() {
-        File file = new java.io.File(filePath);
-        if (file.exists() && file.delete()) {
-            try {
-                file.createNewFile();
-            }
-            catch (java.io.IOException e) {
-                e.printStackTrace();
-            }
+        String query = "DELETE FROM reports";
+        try (Connection conn = DatabaseManager.getConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate(query);
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 }

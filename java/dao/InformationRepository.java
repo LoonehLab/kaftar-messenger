@@ -2,414 +2,187 @@ package dao;
 
 import entity.*;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InformationRepository 
-{
-    private String userDirectory;
-    //private String dataOfUserPath;
-
+public class InformationRepository {
     private User user;
 
     public InformationRepository(User user)
     {
-        userDirectory = ".." + File.separator + "data" + File.separator + "users" + File.separator + user.getId();
         this.user = user;
-        try
-        {
-            File folder = new File(userDirectory);
-            if(!folder.exists())
-            {
-            folder.mkdirs();
-            }
-            File pvFile = new File(folder, "pv.txt");
-            if(!pvFile.exists())
-            {
-            pvFile.createNewFile();
-            }
-            File groupFile = new File(folder, "group.txt");
-            if(!groupFile.exists())
-            {
-            groupFile.createNewFile();
-            }
-            File avatarFile = new File(folder, "avatar.txt");
-            if(!avatarFile.exists()) 
-            { 
-            avatarFile.createNewFile(); 
-            }
-            File bioFile = new File(folder, "bio.txt");
-            if(!bioFile.exists())
-            {
-            bioFile.createNewFile();
-            }
-            File contactFile = new File(folder, "contact.txt");
-            if(!contactFile.exists())
-            {
-            contactFile.createNewFile();
-            }
-            File lastSeenFile = new File(folder, "lastSeen.txt");
-            if(!lastSeenFile.exists())
-            {
-            lastSeenFile.createNewFile();
-            }
-            File blockFile = new File(folder, "block.txt");
-            if(!blockFile.exists())
-            {
-            blockFile.createNewFile();
-            }
-        }
-        catch(IOException e) 
-        {
-        e.printStackTrace();
-        }
     }
 
-    public void saveBlockedUser(User user)
+    public void saveBlockedUser(User blockedUser)
     {
-        File file = new File(userDirectory, "block.txt");
-        try(FileWriter writer = new FileWriter(file, true))
+        String query = "INSERT OR IGNORE INTO blocked_users(user_id, blocked_id) VALUES(?, ?)";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            writer.write(user.getId()+"\n");
+            pstmt.setString(1, user.getId());
+            pstmt.setString(2, blockedUser.getId());
+            pstmt.executeUpdate();
         }
-        catch(IOException e) 
+        catch(SQLException e) 
         {
-        e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
     public void saveLastSeen(long lastSeen)
     {
-        File file = new File(userDirectory, "lastSeen.txt");
-        try(FileWriter writer = new FileWriter(file, false))
+        String query = "UPDATE users SET last_seen = ? WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            writer.write(String.valueOf(lastSeen));
+            pstmt.setLong(1, lastSeen);
+            pstmt.setString(2, user.getId());
+            pstmt.executeUpdate();
         }
-        catch(IOException e) 
+        catch(SQLException e) 
         {
-        e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
     public long getLastSeen()
     {
         long result = 0;
-
-        File file = new File(userDirectory, "lastSeen.txt");
-        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        String query = "SELECT last_seen FROM users WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            String line;
-            if ((line = reader.readLine()) != null) 
+            pstmt.setString(1, user.getId());
+            try (ResultSet rs = pstmt.executeQuery())
             {
-                if(!line.isEmpty()) 
+                if (rs.next()) 
                 {
-                    result = Long.parseLong(line);
+                    result = rs.getLong("last_seen");
                 }
             }
         }
-
-        catch(IOException e)
+        catch(SQLException e)
         {
             e.printStackTrace();
         }
-
         return result;
     }
 
     public void unreadMessagesPlusOne(Chat chat)
     {
-        String fileName = "";
-        int count = 0;
+        String chatId = (chat instanceof PV) ? 
+            (((PV)chat).getFirstPerson().getId().equals(user.getId()) ? ((PV)chat).getSecondPerson().getId() : ((PV)chat).getFirstPerson().getId()) : 
+            ((Group)chat).getId();
+        String chatType = (chat instanceof PV) ? "pv" : "group";
 
-        if(chat instanceof PV)
+        String query = "UPDATE chat_states SET unread_count = unread_count + 1 WHERE user_id = ? AND chat_id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            fileName = "pv.txt";
-            File file = new File(userDirectory, fileName);
-            PV pv = (PV)chat;
-            List<String> lines = new ArrayList<>();
-            String targetId = (pv.getFirstPerson().getId()).equals(user.getId()) ? pv.getSecondPerson().getId() : pv.getFirstPerson().getId();
-            if (file.exists()) 
-            {
-                try (BufferedReader reader = new BufferedReader(new FileReader(file))) 
-                {
-                    String line;
-                    while ((line = reader.readLine()) != null) 
-                    {
-                        String[] parts = line.split(":");
-                        if(parts[0].equals(targetId))
-                        {
-                            count = Integer.parseInt((parts[1].split(","))[1])+1;
-                            String[] help = line.split(",");
-                            lines.add(help[0]+","+count);
-                        }
-
-                        else
-                        {
-                            lines.add(line);
-                        }
-                    }
-
-                    try(FileWriter writer = new FileWriter(file , false))
-                    {
-                        for(String v : lines)
-                        {
-                            writer.write(v+"\n");
-                        }
-                    }
-                    catch(IOException e)
-                    {
-                        e.printStackTrace();
-                    }
+            pstmt.setString(1, user.getId());
+            pstmt.setString(2, chatId);
+            int affected = pstmt.executeUpdate();
+            
+            if (affected == 0) {
+                String insertQuery = "INSERT INTO chat_states(user_id, chat_id, chat_type, state, unread_count) VALUES(?, ?, ?, 'normal', 1)";
+                try (PreparedStatement insertStmt = conn.prepareStatement(insertQuery)) {
+                    insertStmt.setString(1, user.getId());
+                    insertStmt.setString(2, chatId);
+                    insertStmt.setString(3, chatType);
+                    insertStmt.executeUpdate();
                 }
-                catch(IOException e) { e.printStackTrace(); }
             }
         }
-
-        else
+        catch(SQLException e)
         {
-            fileName = "group.txt";
-            File file = new File(userDirectory, fileName);
-            Group group = (Group)chat;
-            List<String> lines = new ArrayList<>();
-            String targetId = group.getId();
-            if (file.exists()) {
-                try (BufferedReader reader = new BufferedReader(new FileReader(file))) 
-                {
-                    String line;
-                    while ((line = reader.readLine()) != null) 
-                    {
-                        String[] parts = line.split(":");
-                        if(parts[0].equals(targetId))
-                        {
-                            count = Integer.parseInt((parts[1].split(","))[1])+1;
-                            String[] help = line.split(",");
-                            lines.add(help[0]+","+count);
-                        }
-
-                        else
-                        {
-                            lines.add(line);
-                        }
-                    }
-
-                    try(FileWriter writer = new FileWriter(file , false))
-                    {
-                        for(String v : lines)
-                        {
-                            writer.write(v+"\n");
-                        }
-                    }
-                    catch(IOException e)
-                    {
-                        e.printStackTrace();
-                    }
-                }
-                catch(IOException e) { e.printStackTrace(); }
-            }
+            e.printStackTrace();
         }
     }
 
     public void readMessages(Chat chat)
     {
-        String fileName = "";
+        String chatId = (chat instanceof PV) ? 
+            (((PV)chat).getFirstPerson().getId().equals(user.getId()) ? ((PV)chat).getSecondPerson().getId() : ((PV)chat).getFirstPerson().getId()) : 
+            ((Group)chat).getId();
 
-        if(chat instanceof PV)
+        String query = "UPDATE chat_states SET unread_count = 0 WHERE user_id = ? AND chat_id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            fileName = "pv.txt";
-            File file = new File(userDirectory, fileName);
-            PV pv = (PV)chat;
-            List<String> lines = new ArrayList<>();
-            String targetId = (pv.getFirstPerson().getId()).equals(user.getId()) ? pv.getSecondPerson().getId() : pv.getFirstPerson().getId();
-            if (file.exists()) 
-            {
-                try (BufferedReader reader = new BufferedReader(new FileReader(file))) 
-                {
-                    String line;
-                    while ((line = reader.readLine()) != null) 
-                    {
-                        String[] parts = line.split(":");
-                        if(parts[0].equals(targetId))
-                        {
-                            String[] help = line.split(",");
-                            lines.add(help[0]+",0");
-                        }
-
-                        else
-                        {
-                            lines.add(line);
-                        }
-                    }
-
-                    try(FileWriter writer = new FileWriter(file , false))
-                    {
-                        for(String v : lines)
-                        {
-                            writer.write(v+"\n");
-                        }
-                    }
-                    catch(IOException e)
-                    {
-                        e.printStackTrace();
-                    }
-                }
-                catch(IOException e) { e.printStackTrace(); }
-            }
+            pstmt.setString(1, user.getId());
+            pstmt.setString(2, chatId);
+            pstmt.executeUpdate();
         }
-
-        else
+        catch(SQLException e)
         {
-            fileName = "group.txt";
-            File file = new File(userDirectory, fileName);
-            Group group = (Group)chat;
-            List<String> lines = new ArrayList<>();
-            String targetId = group.getId();
-            if (file.exists()) {
-                try (BufferedReader reader = new BufferedReader(new FileReader(file))) 
-                {
-                    String line;
-                    while ((line = reader.readLine()) != null) 
-                    {
-                        String[] parts = line.split(":");
-                        if(parts[0].equals(targetId))
-                        {
-                            String[] help = line.split(",");
-                            lines.add(help[0]+",0");
-                        }
-
-                        else
-                        {
-                            lines.add(line);
-                        }
-                    }
-
-                    try(FileWriter writer = new FileWriter(file , false))
-                    {
-                        for(String v : lines)
-                        {
-                            writer.write(v+"\n");
-                        }
-                    }
-                    catch(IOException e)
-                    {
-                        e.printStackTrace();
-                    }
-                }
-                catch(IOException e) { e.printStackTrace(); }
-            }
+            e.printStackTrace();
         }
     }
 
     public int getUreadMessagesCount(Chat chat)
     {
-        String fileName = "";
+        String chatId = (chat instanceof PV) ? 
+            (((PV)chat).getFirstPerson().getId().equals(user.getId()) ? ((PV)chat).getSecondPerson().getId() : ((PV)chat).getFirstPerson().getId()) : 
+            ((Group)chat).getId();
 
-        if(chat instanceof PV)
+        String query = "SELECT unread_count FROM chat_states WHERE user_id = ? AND chat_id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            fileName = "pv.txt";
-            File file = new File(userDirectory, fileName);
-            PV pv = (PV)chat;
-            String targetId = (pv.getFirstPerson().getId()).equals(user.getId()) ? pv.getSecondPerson().getId() : pv.getFirstPerson().getId();
-            if (file.exists()) 
+            pstmt.setString(1, user.getId());
+            pstmt.setString(2, chatId);
+            try (ResultSet rs = pstmt.executeQuery())
             {
-                try (BufferedReader reader = new BufferedReader(new FileReader(file))) 
+                if (rs.next())
                 {
-                    String line;
-                    while ((line = reader.readLine()) != null) 
-                    {
-                        if (line.trim().isEmpty() || !line.contains(":")) continue;
-                        String[] parts = line.split(":");
-                        if(parts[0].equals(targetId) && parts.length > 1)
-                        {
-                            String[] subParts = parts[1].split(",");
-                            if (subParts.length > 1) return Integer.parseInt(subParts[1].trim());
-                        }
-                    }
+                    return rs.getInt("unread_count");
                 }
-                catch(IOException | NumberFormatException e) { e.printStackTrace(); }
             }
         }
-
-        else
+        catch(SQLException e)
         {
-            fileName = "group.txt";
-            File file = new File(userDirectory, fileName);
-            Group group = (Group)chat;
-            String targetId = group.getId();
-            if (file.exists()) {
-                try (BufferedReader reader = new BufferedReader(new FileReader(file))) 
-                {
-                    String line;
-                    while ((line = reader.readLine()) != null) 
-                    {
-                        if (line.trim().isEmpty() || !line.contains(":")) continue;
-                        String[] parts = line.split(":");
-                        if(parts[0].equals(targetId) && parts.length > 1)
-                        {
-                            String[] subParts = parts[1].split(",");
-                            if (subParts.length > 1) return Integer.parseInt(subParts[1].trim());
-                        }
-                    }
-                }
-                catch(IOException | NumberFormatException e) { e.printStackTrace(); }
-            }
+            e.printStackTrace();
         }
-
         return 0;
     }
     
     public void savePv(PV pv)
     {
-        File file = new File(userDirectory, "pv.txt");
-        try(FileWriter writer = new FileWriter(file, true))
-        {
-            if(pv.getFirstPerson() == user)
-            {
-                writer.write(pv.getSecondPerson().getId()+":normal,0\n");
-            }
-            else if(pv.getSecondPerson() == user)
-            {
-                writer.write(pv.getFirstPerson().getId()+":normal,0\n");
-            }
-        }
-        catch(IOException e) { e.printStackTrace(); }
+        String targetId = pv.getFirstPerson().getId().equals(user.getId()) ? pv.getSecondPerson().getId() : pv.getFirstPerson().getId();
+        saveChatState(targetId, "pv", "normal");
     }
 
     public void saveGroup(Group group)
     {
-        File file = new File(userDirectory, "group.txt");
-        try(FileWriter writer = new FileWriter(file, true))
-        {
-            writer.write(group.getId()+":normal,0\n");
-        }
-        catch(IOException e) 
-        {
-        e.printStackTrace();
-        }
+        saveChatState(group.getId(), "group", "normal");
     }
 
     public void saveAvatar() {
-        File file = new File(userDirectory, "avatar.txt");
-        try(FileWriter writer = new FileWriter(file, false)) {
-            writer.write(user.getAvatar() != null ? user.getAvatar() : "");
-        } catch(IOException e) {
+        String query = "UPDATE users SET avatar = ? WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
+        {
+            pstmt.setString(1, user.getAvatar() != null ? user.getAvatar() : "");
+            pstmt.setString(2, user.getId());
+            pstmt.executeUpdate();
+        } 
+        catch(SQLException e) {
             e.printStackTrace();
         }
     }
 
     public void saveBioAndOtherData()
     {
-        File file = new File(userDirectory, "bio.txt");
-        try(FileWriter writer = new FileWriter(file , false))
+        String query = "UPDATE users SET bio = ? WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            writer.write(user.getBio() != null ? user.getBio() : "");
+            pstmt.setString(1, user.getBio() != null ? user.getBio() : "");
+            pstmt.setString(2, user.getId());
+            pstmt.executeUpdate();
         }
-
-        catch(IOException e)
+        catch(SQLException e)
         {
             e.printStackTrace();
         }
@@ -417,65 +190,55 @@ public class InformationRepository
 
     public void saveContact(User contact)
     {
-        File file = new File(userDirectory, "contact.txt");
-        try(FileWriter writer = new FileWriter(file , true))
+        String query = "INSERT OR IGNORE INTO contacts(user_id, contact_id) VALUES(?, ?)";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            writer.write(contact.getId()+"\n");
+            pstmt.setString(1, user.getId());
+            pstmt.setString(2, contact.getId());
+            pstmt.executeUpdate();
         }
-
-        catch(IOException e)
+        catch(SQLException e)
         {
             e.printStackTrace();
         }
     }
 
     public void saveChatState(String chatId, String type, String state) {
-        String fileName = "pv".equalsIgnoreCase(type) ? "pv.txt" : "group.txt";
-        File file = new File(userDirectory, fileName);
-        List<String> lines = new ArrayList<>();
-        boolean found = false;
-        if (file.exists()) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.startsWith(chatId + ":")) {
-                        String[] parts = line.split(",");
-                        lines.add(chatId + ":" + state+","+parts[1]);
-                        found = true;
-                    } else if (!line.isEmpty()) {
-                        lines.add(line);
-                    }
-                }
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
+        String query = "INSERT INTO chat_states(user_id, chat_id, chat_type, state, unread_count) VALUES(?, ?, ?, ?, COALESCE((SELECT unread_count FROM chat_states WHERE user_id = ? AND chat_id = ?), 0)) " +
+                       "ON CONFLICT(user_id, chat_id) DO UPDATE SET state = excluded.state, chat_type = excluded.chat_type";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
+        {
+            pstmt.setString(1, user.getId());
+            pstmt.setString(2, chatId);
+            pstmt.setString(3, type);
+            pstmt.setString(4, state);
+            pstmt.setString(5, user.getId());
+            pstmt.setString(6, chatId);
+            pstmt.executeUpdate();
         }
-        if (!found){ lines.add(chatId + ":" + state+","+"0"); }
-        try (FileWriter writer = new FileWriter(file, false)) {
-            for (String l : lines) writer.write(l + "\n");
-            }
-        catch (IOException e) {
+        catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
     public String getChatState(String chatId, String type) {
-        String fileName = "pv".equalsIgnoreCase(type) ? "pv.txt" : "group.txt";
-        File file = new File(userDirectory, fileName);
-        if (!file.exists()) return "normal";
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = reader.readLine()) != null)
+        String query = "SELECT state FROM chat_states WHERE user_id = ? AND chat_id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
+        {
+            pstmt.setString(1, user.getId());
+            pstmt.setString(2, chatId);
+            try (ResultSet rs = pstmt.executeQuery())
             {
-                if (line.startsWith(chatId + ":"))
+                if (rs.next())
                 {
-                    String[] part = line.split(":");
-                    return part[1].split(",")[0].trim();
+                    return rs.getString("state");
                 }
             }
         }
-        catch (IOException e) {
+        catch (SQLException e) {
             e.printStackTrace();
         }
         return "normal";
@@ -484,168 +247,148 @@ public class InformationRepository
     public List<String> getPvIds()
     {
         List<String> ids = new ArrayList<>();
-        File file = new File(userDirectory, "pv.txt");
-        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        String query = "SELECT chat_id FROM chat_states WHERE user_id = ? AND chat_type = 'pv'";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            String line;
-            while ((line = reader.readLine()) != null) 
+            pstmt.setString(1, user.getId());
+            try (ResultSet rs = pstmt.executeQuery())
             {
-                if(!line.isEmpty()) 
+                while (rs.next()) 
                 {
-                    ids.add(line.split(":")[0].trim());
+                    ids.add(rs.getString("chat_id"));
                 }
             }
         }
-
-        catch(IOException e)
+        catch(SQLException e)
         {
             e.printStackTrace();
         }
-
         return ids;
     }
 
     public List<String> getGroupIds()
     {
         List<String> ids = new ArrayList<>();
-        File file = new File(userDirectory, "group.txt");
-        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        String query = "SELECT chat_id FROM chat_states WHERE user_id = ? AND chat_type = 'group'";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            String line;
-            while ((line = reader.readLine()) != null) 
+            pstmt.setString(1, user.getId());
+            try (ResultSet rs = pstmt.executeQuery())
             {
-                if(!line.isEmpty()) 
+                while (rs.next()) 
                 {
-                    ids.add(line.split(":")[0].trim());
+                    ids.add(rs.getString("chat_id"));
                 }
             }
         }
-
-        catch(IOException e)
+        catch(SQLException e)
         {
             e.printStackTrace();
         }
-
         return ids;
     }
 
     public String getAvatar() {
-        File file = new File(userDirectory, "avatar.txt");
-        StringBuilder sb = new StringBuilder();
-        try(BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
+        String query = "SELECT avatar FROM users WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
+        {
+            pstmt.setString(1, user.getId());
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("avatar");
+                }
             }
-        } catch(IOException e) {
+        } 
+        catch(SQLException e) {
             e.printStackTrace();
         }
-        return sb.toString();
+        return "";
     }
 
     public String getBio()
     {
         String bio = null;
-        File file = new File(userDirectory, "bio.txt");
-        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        String query = "SELECT bio FROM users WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            String line = reader.readLine();
-            bio = line;
-
-            if(bio == null)
+            pstmt.setString(1, user.getId());
+            try (ResultSet rs = pstmt.executeQuery())
             {
-                return null;
+                if (rs.next())
+                {
+                    bio = rs.getString("bio");
+                }
             }
         }
-        catch(IOException e)
+        catch(SQLException e)
         {
             e.printStackTrace();
         }
-
         return bio;
     }
 
     public List<String> getContactsId()
     {
         List<String> ids = new ArrayList<>();
-        File file = new File(userDirectory, "contact.txt");
-        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        String query = "SELECT contact_id FROM contacts WHERE user_id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            String line;
-
-            while ((line = reader.readLine()) != null) 
+            pstmt.setString(1, user.getId());
+            try (ResultSet rs = pstmt.executeQuery())
             {
-                if(!line.isEmpty()) 
+                while (rs.next()) 
                 {
-                    ids.add(line.trim());
+                    ids.add(rs.getString("contact_id"));
                 }
             }
         }
-
-        catch(IOException e)
+        catch(SQLException e)
         {
             e.printStackTrace();
         }
-
         return ids;
     }
 
     public List<String> getBlockedUsersId()
     {
         List<String> ids = new ArrayList<>();
-        File file = new File(userDirectory, "block.txt");
-        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        String query = "SELECT blocked_id FROM blocked_users WHERE user_id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            String line;
-
-            while ((line = reader.readLine()) != null) 
+            pstmt.setString(1, user.getId());
+            try (ResultSet rs = pstmt.executeQuery())
             {
-                if(!line.isEmpty()) 
+                while (rs.next()) 
                 {
-                    ids.add(line.trim());
+                    ids.add(rs.getString("blocked_id"));
                 }
             }
         }
-
-        catch(IOException e)
+        catch(SQLException e)
         {
             e.printStackTrace();
         }
-
         return ids;
     }
 
     public void removePv(PV pv)
     {
-        String targetId = (pv.getFirstPerson().getId()).equals(user.getId()) ? pv.getSecondPerson().getId() : pv.getFirstPerson().getId();
-        File file = new File(userDirectory, "pv.txt");
-        List<String> lines = new ArrayList<>();
-
-        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        String targetId = pv.getFirstPerson().getId().equals(user.getId()) ? pv.getSecondPerson().getId() : pv.getFirstPerson().getId();
+        String query = "DELETE FROM chat_states WHERE user_id = ? AND chat_id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            String line;
-            while ((line = reader.readLine()) != null)
-            {
-                if (!line.startsWith(targetId + ":") && !line.isEmpty())
-                {
-                    lines.add(line);
-                }
-            }
+            pstmt.setString(1, user.getId());
+            pstmt.setString(2, targetId);
+            pstmt.executeUpdate();
         }
-        catch(IOException e)
-        {
-            e.printStackTrace();
-        }
-
-        try(FileWriter writer = new FileWriter(file , false))
-        {
-            for(String v : lines)
-            {
-                writer.write(v+"\n");
-            }
-        }
-
-        catch(IOException e)
+        catch(SQLException e)
         {
             e.printStackTrace();
         }
@@ -653,48 +396,16 @@ public class InformationRepository
 
     public void removeGroup(Group group)
     {
-        if (group == null || group.getId() == null) {
-            System.out.println("DEBUG: Group or Group ID is null!");
-            return;
-        }
-
-        File file = new File(userDirectory, "group.txt");
-        if (!file.exists()) {
-            System.out.println("DEBUG: group.txt does not exist for user: " + user.getId());
-            return;
-        }
-
-        List<String> lines = new ArrayList<>();
-        String targetId = group.getId().trim();
-
-        try(BufferedReader reader = new BufferedReader(new FileReader(file)))
+        if (group == null || group.getId() == null) return;
+        String query = "DELETE FROM chat_states WHERE user_id = ? AND chat_id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            String line;
-            while ((line = reader.readLine()) != null)
-            {
-                line = line.trim();
-                if (line.isEmpty()) continue;
-                String[] parts = line.split(":");
-                String currentGroupId = parts[0].trim();
-                if (!currentGroupId.equals(targetId))
-                {
-                    lines.add(line);
-                }
-            }
+            pstmt.setString(1, user.getId());
+            pstmt.setString(2, group.getId());
+            pstmt.executeUpdate();
         }
-        catch(IOException e)
-        {
-            e.printStackTrace();
-        }
-
-        try(FileWriter writer = new FileWriter(file , false))
-        {
-            for(String v : lines)
-            {
-                writer.write(v+"\n");
-            }
-        }
-        catch(IOException e)
+        catch(SQLException e)
         {
             e.printStackTrace();
         }
@@ -702,66 +413,37 @@ public class InformationRepository
 
     public void removeContact(User contact)
     {
-        List<String> ids = getContactsId();
-        
-        for(String c : ids)
+        String query = "DELETE FROM contacts WHERE user_id = ? AND contact_id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            if(c.equals(contact.getId()))
-            {
-                ids.remove(c);
-                break;
-            }
+            pstmt.setString(1, user.getId());
+            pstmt.setString(2, contact.getId());
+            pstmt.executeUpdate();
         }
-
-        File file = new File(userDirectory, "contact.txt");
-        try(FileWriter writer = new FileWriter(file , false))
-        {
-            for(String v : ids)
-            {
-                writer.write(v+"\n");
-            }
-        }
-
-        catch(IOException e)
+        catch(SQLException e)
         {
             e.printStackTrace();
         }
     }
 
-    public void removeBlockedUser(User user)
+    public void removeBlockedUser(User blockedUser)
     {
-        List<String> ids = getBlockedUsersId();
-        
-        for(String c : ids)
+        String query = "DELETE FROM blocked_users WHERE user_id = ? AND blocked_id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            if(c.equals(user.getId()))
-            {
-                ids.remove(c);
-                break;
-            }
+            pstmt.setString(1, user.getId());
+            pstmt.setString(2, blockedUser.getId());
+            pstmt.executeUpdate();
         }
-
-        File file = new File(userDirectory, "block.txt");
-        try(FileWriter writer = new FileWriter(file , false))
-        {
-            for(String v : ids)
-            {
-                writer.write(v+"\n");
-            }
-        }
-
-        catch(IOException e)
+        catch(SQLException e)
         {
             e.printStackTrace();
         }
     }
 
     public void deleteUserDirectory() {
-        File folder = new File(userDirectory);
-        if (folder.exists() && folder.isDirectory()) {
-            File[] files = folder.listFiles();
-            if (files != null) for (File file : files) file.delete();
-            folder.delete();
-        }
+        // No Need in SQL
     }
 }

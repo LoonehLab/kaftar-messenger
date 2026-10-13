@@ -2,171 +2,168 @@ package dao;
 
 import entity.*;
 
-import java.io.*;
-import java.util.*;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
-public class UserRepository 
-{
-   private String filePath = ".." + File.separator + "data" + File.separator + "users.txt";
+public class UserRepository {
    
-   private UserRepository()
-   {
-    try
-    {
-      File file = new File(filePath);
-      File folder = new File(".." + File.separator + "data");
-      if(!folder.exists()) folder.mkdir();
-      if(!file.exists()) file.createNewFile();
-    }
-
-    catch(IOException e) 
-    {
-      e.printStackTrace();
-    }
-    
+   private UserRepository() {
+      // Singleton
    }
 
-   private static class UserRepositoryInner
-   {
+   private static class UserRepositoryInner {
       private static final UserRepository INSTANCE = new UserRepository();
    }
 
-   public static UserRepository getInstance(){ return UserRepositoryInner.INSTANCE; }
+   public static UserRepository getInstance() { 
+      return UserRepositoryInner.INSTANCE; 
+   }
 
-   public void save(User user)
-   {
-      try(FileWriter writer = new FileWriter(filePath , true))
-      {
-         writer.write(user.getId()+" , "+user.getUserName()+" , "+user.getFullName()+" , "+user.getPassword()+"\n");
+   public void save(User user) {
+      String query = "INSERT INTO users(id, username, full_name, password, avatar, bio, last_seen) VALUES(?, ?, ?, ?, ?, ?, ?)";
+      try (Connection conn = DatabaseManager.getConnection();
+           PreparedStatement pstmt = conn.prepareStatement(query)) {
+         pstmt.setString(1, user.getId());
+         pstmt.setString(2, user.getUserName());
+         pstmt.setString(3, user.getFullName());
+         pstmt.setString(4, user.getPassword());
+         pstmt.setString(5, user.getAvatar());
+         pstmt.setString(6, user.getBio());
+         pstmt.setLong(7, 0); // Default = 0
+         pstmt.executeUpdate();
       }
-
-      catch(IOException e)  
-      {
+      catch (SQLException e) {
          e.printStackTrace();
       }
    }
 
    public void delete(User user) {
-      if (user == null) return;
-      List<User> users = getAllUsers();
-      try (FileWriter writer = new FileWriter(filePath, false)) {
-         for (User u : users)
-            if (!u.getId().equals(user.getId()))
-               writer.write(u.getId() + " , " + u.getUserName() + " , " + u.getFullName() + " , " + u.getPassword() + "\n");
+      if (user == null || user.getId() == null) return;
+      String query = "DELETE FROM users WHERE id = ?";
+      try (Connection conn = DatabaseManager.getConnection();
+           PreparedStatement pstmt = conn.prepareStatement(query)) {
+         pstmt.setString(1, user.getId());
+         pstmt.executeUpdate();
       }
-      catch (IOException e) {
+      catch (SQLException e) {
          e.printStackTrace();
       }
    }
 
-   public void changeFullName(String userId ,String newName)
-   {
-      List<User> users = getAllUsers();
-
-      try(FileWriter writer = new FileWriter(filePath , false))
-      {
-         for(int i=0 ; i<users.size() ; i++)
-         {
-            if(userId.equals(users.get(i).getId()))
-            {
-               writer.write(users.get(i).getId()+" , "+users.get(i).getUserName()+" , "+newName+" , "+users.get(i).getPassword()+"\n");
-            }
-
-            else
-            {
-               writer.write(users.get(i).getId()+" , "+users.get(i).getUserName()+" , "+users.get(i).getFullName()+" , "+users.get(i).getPassword()+"\n");
-            }
-         }
+   public void changeFullName(String userId, String newName) {
+      String query = "UPDATE users SET full_name = ? WHERE id = ?";
+      try (Connection conn = DatabaseManager.getConnection();
+           PreparedStatement pstmt = conn.prepareStatement(query)) {
+         pstmt.setString(1, newName);
+         pstmt.setString(2, userId);
+         pstmt.executeUpdate();
       }
-
-      catch(IOException e)  
-      {
+      catch (SQLException e) {
          e.printStackTrace();
       }
    }
 
    public void changePassword(String userId, String newPassword) {
-      List<User> users = getAllUsers();
-      try (FileWriter writer = new FileWriter(filePath, false)) {
-         for (User u : users) {
-               if (userId.equals(u.getId())) {
-                  writer.write(u.getId() + " , " + u.getUserName() + " , " + u.getFullName() + " , " + newPassword + "\n");
-               }
-               else {
-                  writer.write(u.getId() + " , " + u.getUserName() + " , " + u.getFullName() + " , " + u.getPassword() + "\n");
-               }
-         }
+      String query = "UPDATE users SET password = ? WHERE id = ?";
+      try (Connection conn = DatabaseManager.getConnection();
+           PreparedStatement pstmt = conn.prepareStatement(query)) {
+         pstmt.setString(1, newPassword);
+         pstmt.setString(2, userId);
+         pstmt.executeUpdate();
       }
-      catch (IOException e) {
+      catch (SQLException e) {
          e.printStackTrace();
       }
    }
 
-   private List<User> makeArrayOfAllUsers()
-   {
-      List<User> users = new ArrayList<>();
-
-      try(BufferedReader reader = new BufferedReader(new FileReader(filePath)))
-      {
-         String line;
-
-         while ((line = reader.readLine()) != null) 
-         {
-            String[] userData = line.split(" , ");
-            if (userData.length >= 4) {
-                  User newUser = new User(userData[0], userData[1], userData[2], userData[3], true);
-                  users.add(newUser);
-            }
+   public boolean isExists(String id) {
+      String query = "SELECT 1 FROM users WHERE id = ?";
+      try (Connection conn = DatabaseManager.getConnection();
+           PreparedStatement pstmt = conn.prepareStatement(query)) {
+         pstmt.setString(1, id);
+         try (ResultSet rs = pstmt.executeQuery()) {
+            return rs.next();
          }
       }
-
-      catch(IOException e)  
-      {
+      catch (SQLException e) {
          e.printStackTrace();
       }
-
-      return users;
-   }
-
-   public boolean isExists(String id)
-   {
-      List<User> users = makeArrayOfAllUsers();
-
-      for(int i=0 ; i<users.size() ; i++)
-      {
-         if((users.get(i).getId()).equals(id))
-         {
-            return true;
-         }
-      }
-
       return false;
    }
 
-   public User findUserById(String id)
-   {
-      List<User> users = makeArrayOfAllUsers();
-
-      for(int i=0 ; i<users.size() ; i++)
-      {
-         if((users.get(i).getId()).equals(id))
-         {
-            return users.get(i);
+   public User findUserById(String id) {
+      String query = "SELECT * FROM users WHERE id = ?";
+      try (Connection conn = DatabaseManager.getConnection();
+           PreparedStatement pstmt = conn.prepareStatement(query)) {
+         pstmt.setString(1, id);
+         try (ResultSet rs = pstmt.executeQuery()) {
+            if (rs.next()) {
+               User user = new User(
+                  rs.getString("id"),
+                  rs.getString("username"),
+                  rs.getString("full_name"),
+                  rs.getString("password"),
+                  true
+               );
+               user.setAvatar(rs.getString("avatar"));
+               user.setBio(rs.getString("bio"));
+               return user;
+            }
          }
       }
-
+      catch (SQLException e) {
+         e.printStackTrace();
+      }
       return null;
    }
 
-   public List<User> getAllUsers()
-   {
-      return makeArrayOfAllUsers();
+   public List<User> getAllUsers() {
+      List<User> users = new ArrayList<>();
+      String query = "SELECT * FROM users";
+      try (Connection conn = DatabaseManager.getConnection();
+           Statement stmt = conn.createStatement();
+           ResultSet rs = stmt.executeQuery(query)) {
+         while (rs.next()) {
+            User user = new User(
+               rs.getString("id"),
+               rs.getString("username"),
+               rs.getString("full_name"),
+               rs.getString("password"),
+               true
+            );
+            user.setAvatar(rs.getString("avatar"));
+            user.setBio(rs.getString("bio"));
+            users.add(user);
+         }
+      } catch (SQLException e) {
+         e.printStackTrace();
+      }
+      return users;
    }
 
    public User findUserByAnyField(String username, String fullName) {
-      for(User u : makeArrayOfAllUsers()) {
-         if (!username.isEmpty() && u.getUserName().equalsIgnoreCase(username)) return u;
-         if (!fullName.isEmpty() && u.getFullName().equalsIgnoreCase(fullName)) return u;
+      String query = "SELECT * FROM users WHERE username = ? OR full_name = ?";
+      try (Connection conn = DatabaseManager.getConnection();
+           PreparedStatement pstmt = conn.prepareStatement(query)) {
+         pstmt.setString(1, username != null ? username : "");
+         pstmt.setString(2, fullName != null ? fullName : "");
+         try (ResultSet rs = pstmt.executeQuery()) {
+            if (rs.next()) {
+               User user = new User(
+                  rs.getString("id"),
+                  rs.getString("username"),
+                  rs.getString("full_name"),
+                  rs.getString("password"),
+                  true
+               );
+               user.setAvatar(rs.getString("avatar"));
+               user.setBio(rs.getString("bio"));
+               return user;
+            }
+         }
+      } catch (SQLException e) {
+         e.printStackTrace();
       }
       return null;
    }

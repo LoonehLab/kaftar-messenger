@@ -2,126 +2,88 @@ package dao;
 
 import entity.*;
 
-import java.io.*;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AllGroupsRepository
-{
-    private String filePath = ".." + File.separator + "data" + File.separator + "groups.txt";
+public class AllGroupsRepository {
+    
+    private AllGroupsRepository() {}
 
-    private AllGroupsRepository()
-    {
-        try
-        {
-            File file = new File(filePath);
-            File folder = new File(".." + File.separator + "data");
-            if(!folder.exists()) folder.mkdir();
-            if(!file.exists()) file.createNewFile();
-        }
-
-        catch(IOException e)
-        {
-            e.printStackTrace();
-        }
+    private static class GroupRepositoryInner {
+        private static final AllGroupsRepository INSTANCE = new AllGroupsRepository();
     }
 
-    private static class GroupRepositoryInner
-    {
-        private static final AllGroupsRepository INSTANCE =
-            new AllGroupsRepository();
-    }
-
-    public static AllGroupsRepository getInstance()
-    {
+    public static AllGroupsRepository getInstance() {
         return GroupRepositoryInner.INSTANCE;
     }
 
-    public void save(Group group)
-    {
-        try(FileWriter writer = new FileWriter(filePath,true))
-        {
-            writer.write(group.getId()+" , "+group.getName()+" , "+group.getOwner().getId()+"\n");
+    public void save(Group group) {
+        String query = "INSERT OR REPLACE INTO groups(id, name, owner_id) VALUES(?, ?, ?)";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setString(1, group.getId());
+            pstmt.setString(2, group.getName());
+            pstmt.setString(3, group.getOwner().getId());
+            pstmt.executeUpdate();
         }
-
-        catch(IOException e)
-        {
+        catch(SQLException e) {
             e.printStackTrace();
         }
     }
 
     public void delete(Group group) {
         if (group == null || group.getId() == null) return;
-        File file = new File(filePath);
-        if (!file.exists()) return;
-        List<String> remainingLines = new ArrayList<>();
-        String targetGroupId = group.getId().trim();
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                line = line.trim();
-                if (line.isEmpty()) continue;
-                String[] data = line.split(" , ");
-                if (data.length > 0 && !data[0].trim().equals(targetGroupId)) remainingLines.add(line);
-            }
+        String query = "DELETE FROM groups WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setString(1, group.getId());
+            pstmt.executeUpdate();
         }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-        try (FileWriter writer = new FileWriter(file, false)) {
-            for (String remainingLine : remainingLines)
-                writer.write(remainingLine + "\n");
-        }
-        catch (IOException e) {
+        catch (SQLException e) {
             e.printStackTrace();
         }
     }
     
-    public Group findById(String groupId)
-    {
-        try(BufferedReader reader = new BufferedReader(new FileReader(filePath)))
-        {
-            String line;
-            while((line = reader.readLine()) != null)
-            {
-                String[] data = line.split(" , ");
-                if(data[0].equals(groupId))
-                {
-                    User owner = UserRepository.getInstance().findUserById(data[2]);
-                    if(owner == null)return null;
-                    return new Group(data[0], owner, data[1], owner);
+    public Group findById(String groupId) {
+        String query = "SELECT * FROM groups WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setString(1, groupId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if(rs.next()) {
+                    User owner = UserRepository.getInstance().findUserById(rs.getString("owner_id"));
+                    if(owner == null) return null;
+                    Group group = new Group(rs.getString("id"), owner, rs.getString("name"), owner);
+                    group.setAvatar(rs.getString("avatar"));
+                    return group;
                 }
             }
         }
-
-        catch(IOException e)
-        {
+        catch(SQLException e) {
             e.printStackTrace();
         }
-
         return null;
     }
 
-    public List<Group> findAll()
-    {
+    public List<Group> findAll() {
         List<Group> groups = new ArrayList<>();
-        try(BufferedReader reader = new BufferedReader(new FileReader(filePath)))
-        {
-            String line;
-            while((line = reader.readLine()) != null)
-            {
-                String[] data = line.split(" , ");
-                User owner = UserRepository.getInstance().findUserById(data[2]);
-                if(owner != null)
-                    groups.add(new Group(data[0], owner, data[1], owner));
+        String query = "SELECT * FROM groups";
+        try (Connection conn = DatabaseManager.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+            while(rs.next()) {
+                User owner = UserRepository.getInstance().findUserById(rs.getString("owner_id"));
+                if(owner != null) {
+                    Group group = new Group(rs.getString("id"), owner, rs.getString("name"), owner);
+                    group.setAvatar(rs.getString("avatar"));
+                    groups.add(group);
+                }
             }
         }
-
-        catch(IOException e)
-        {
+        catch(SQLException e) {
             e.printStackTrace();
         }
-
         return groups;
     }
 }
